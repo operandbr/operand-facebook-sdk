@@ -54,29 +54,29 @@ export default class Main implements IMain {
   }
 }
 
-{
-  const main = new Main({
-    pageId: "252900751237310",
-    apiVersion: "v21.0",
-    pageAccessToken:
-      "EAAEG8x0DQWgBO05feI3ZBdXeZAoFPiSciHjE5Irfh1HA3qTJtaxdWRT2uaK85ufoAXtuzXxQbLzKBxZBfdKsVTqeJDH1Lgklh7SBqv8vO1N0i2nOOkNjYMZBZAGSq2yAgbbpWlCwSKhW6mgxTB7zl5fZAwApMkbD5Y1bVcSnXMgYbEiuHuxBtXw2uqQ3gOoNBxUL62F6xRxnKLG9YXLKspZBMkqzVLFXroZD",
-  });
+// {
+//   const main = new Main({
+//     pageId: "252900751237310",
+//     apiVersion: "v21.0",
+//     pageAccessToken:
+//       "EAAEG8x0DQWgBO05feI3ZBdXeZAoFPiSciHjE5Irfh1HA3qTJtaxdWRT2uaK85ufoAXtuzXxQbLzKBxZBfdKsVTqeJDH1Lgklh7SBqv8vO1N0i2nOOkNjYMZBZAGSq2yAgbbpWlCwSKhW6mgxTB7zl5fZAwApMkbD5Y1bVcSnXMgYbEiuHuxBtXw2uqQ3gOoNBxUL62F6xRxnKLG9YXLKspZBMkqzVLFXroZD",
+//   });
 
-  (async () => {
-    try {
-      // const posts = await main.getAllPosts();
-      // console.log(posts);
+//   (async () => {
+//     try {
+//       // const posts = await main.getAllPosts();
+//       // console.log(posts);
 
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const newPost = await main.createPost({
-        message: "Hello, World!",
-        publishNow: false,
-        scheduledPublishTimeUnix: Math.floor(tomorrow.getTime() / 1000),
-      });
-      console.log(newPost);
-    } catch (error) {
-      console.log(error as AxiosError);
-    }
-  })();
-}
+//       const tomorrow = new Date();
+//       tomorrow.setDate(tomorrow.getDate() + 1);
+//       const newPost = await main.createPost({
+//         message: "Hello, World!",
+//         publishNow: false,
+//         scheduledPublishTimeUnix: Math.floor(tomorrow.getTime() / 1000),
+//       });
+//       console.log(newPost);
+//     } catch (error) {
+//       console.log(error as AxiosError);
+//     }
+//   })();
+// }
