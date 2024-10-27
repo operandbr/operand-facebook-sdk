@@ -13,7 +13,20 @@ export interface Paging {
   cursors: Cursors;
 }
 
-export interface GetStatusPosts {
+export interface GetPosts {
   data: PostItem[];
   paging: Paging;
+}
+
+export interface PostPost {
+  id: string;
+  post_id?: string;
+}
+
+export interface UpdatePost {
+  success: boolean;
+}
+
+export interface DeletePost {
+  success: boolean;
 }

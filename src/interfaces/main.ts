@@ -10,10 +10,15 @@ export type CreatePost = {
   message: string;
   publishNow: boolean;
   scheduledPublishTimeUnix?: number;
+  url?: string;
 };
 
 export interface IMain {
   getAllPosts(): Promise<PostItem[]>;
-  createPost(data: CreatePost): Promise<string>;
   getPostUrlById(postId: string): string;
+  createPost(data: CreatePost): Promise<string>;
+  updatePost(postId: string, message: string): Promise<boolean>;
+  deletePost(postId: string): Promise<boolean>;
+
+  saveMedia(media: any): Promise<string>;
 }

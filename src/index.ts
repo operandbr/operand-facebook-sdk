@@ -1,7 +1,12 @@
-import "dotenv/config";
 import axios, { AxiosError, AxiosInstance } from "axios";
 import { ConstructorMain, CreatePost, IMain } from "./interfaces/main";
-import { GetStatusPosts, PostItem } from "./interfaces/meta";
+import {
+  DeletePost,
+  GetPosts,
+  PostItem,
+  PostPost,
+  UpdatePost,
+} from "./interfaces/meta";
 
 export default class Main implements IMain {
   private readonly pageAccessToken: string;
@@ -18,7 +23,7 @@ export default class Main implements IMain {
 
   public async getAllPosts(): Promise<PostItem[]> {
     return (
-      await this.api.get<GetStatusPosts>(`/${this.pageId}/feed`, {
+      await this.api.get<GetPosts>(`/${this.pageId}/feed`, {
         params: {
           access_token: this.pageAccessToken,
         },
@@ -34,6 +39,7 @@ export default class Main implements IMain {
     message,
     publishNow,
     scheduledPublishTimeUnix,
+    url,
   }: CreatePost): Promise<string> {
     if (!publishNow && !scheduledPublishTimeUnix) {
       throw new Error(
@@ -41,42 +47,74 @@ export default class Main implements IMain {
       );
     }
 
-    return (
-      await this.api.post<{ id: string }>(`/${this.pageId}/feed`, {
+    const post = (
+      await this.api.post<PostPost>(`/${this.pageId}/feed`, {
         access_token: this.pageAccessToken,
         message,
         ...(!publishNow && {
           scheduled_publish_time: scheduledPublishTimeUnix,
           published: publishNow,
         }),
+        ...(url && { url }),
       })
-    ).data.id;
+    ).data;
+
+    return post.post_id || post.id;
+  }
+
+  public async updatePost(postId: string, message: string): Promise<boolean> {
+    return (
+      await this.api.post<UpdatePost>(`/${postId}`, {
+        access_token: this.pageAccessToken,
+        message,
+      })
+    ).data.success;
+  }
+
+  public async deletePost(postId: string): Promise<boolean> {
+    return (
+      await this.api.delete<DeletePost>(`/${postId}`, {
+        params: {
+          access_token: this.pageAccessToken,
+        },
+      })
+    ).data.success;
   }
 }
 
-// {
-//   const main = new Main({
-//     pageId: "252900751237310",
-//     apiVersion: "v21.0",
-//     pageAccessToken:
-//       "EAAEG8x0DQWgBO05feI3ZBdXeZAoFPiSciHjE5Irfh1HA3qTJtaxdWRT2uaK85ufoAXtuzXxQbLzKBxZBfdKsVTqeJDH1Lgklh7SBqv8vO1N0i2nOOkNjYMZBZAGSq2yAgbbpWlCwSKhW6mgxTB7zl5fZAwApMkbD5Y1bVcSnXMgYbEiuHuxBtXw2uqQ3gOoNBxUL62F6xRxnKLG9YXLKspZBMkqzVLFXroZD",
-//   });
+{
+  const main = new Main({
+    pageId: "252900751237310",
+    apiVersion: "v21.0",
+    pageAccessToken:
+      "EAAEG8x0DQWgBO8ASf7WfC31p7m316LHHZB5jBtdbWO7DHEk5IN1AI9BbdWSlsFVCibkXqxrthM3ZBqpJdmeVnH5GXQZBU53aUMSLR5e1W3THojJXI8vNeYMc9nQxuQgDEUSqKK5BowfOA94utp0BlqcBa3k3n9FcFVkolZCry4UZBwAQpQsZAiZAlbZAdlhZBtW9FpaZAYhZBv1rHgqbnPRcbrT42vW3asosoIZD",
+  });
 
-//   (async () => {
-//     try {
-//       // const posts = await main.getAllPosts();
-//       // console.log(posts);
-
-//       const tomorrow = new Date();
-//       tomorrow.setDate(tomorrow.getDate() + 1);
-//       const newPost = await main.createPost({
-//         message: "Hello, World!",
-//         publishNow: false,
-//         scheduledPublishTimeUnix: Math.floor(tomorrow.getTime() / 1000),
-//       });
-//       console.log(newPost);
-//     } catch (error) {
-//       console.log(error as AxiosError);
-//     }
-//   })();
-// }
+  (async () => {
+    try {
+      // const posts = await main.getAllPosts();
+      // console.log(posts);
+      // const tomorrow = new Date();
+      // tomorrow.setDate(tomorrow.getDate() + 1);
+      // const newPost = await main.createPost({
+      //   message: "Hello, World!",
+      //   publishNow: false,
+      //   scheduledPublishTimeUnix: Math.floor(tomorrow.getTime() / 1000),
+      // });
+      // console.log(newPost);
+      // const url = main.getPostUrlById("252900751237310_122186207066230378");
+      // console.log(url);
+      // const updated = await main.updatePost(
+      //   "252900751237310_122186208584230378",
+      //   "Hello, World! Updated",
+      // );
+      // console.log(updated);
+      const deleted = await main.deletePost(
+        "252900751237310_122186207990230378",
+      );
+      console.log(deleted);
+    } catch (error) {
+      console.log(error as AxiosError);
+    }
+  })();
+}
