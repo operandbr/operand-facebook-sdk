@@ -15,7 +15,7 @@ import {
   UpdatePost,
 } from "./interfaces/meta";
 
-export default class Main implements IMain {
+export class Main implements IMain {
   private readonly pageAccessToken: string;
   private readonly pageId: string;
   private readonly api: AxiosInstance;
