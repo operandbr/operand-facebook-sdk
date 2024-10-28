@@ -13,12 +13,16 @@ export type CreatePost = {
   url?: string;
 };
 
+export type CreateStories = {
+  photo_id?: string;
+};
+
 export interface IMain {
   getAllPosts(): Promise<PostItem[]>;
   getPostUrlById(postId: string): string;
   createPost(data: CreatePost): Promise<string>;
   updatePost(postId: string, message: string): Promise<boolean>;
   deletePost(postId: string): Promise<boolean>;
-
-  saveMedia(media: any): Promise<string>;
+  saveMediaInMetStorageByUrl(media: any): Promise<string>;
+  postStories(data: CreateStories): Promise<string>;
 }

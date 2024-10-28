@@ -30,3 +30,12 @@ export interface UpdatePost {
 export interface DeletePost {
   success: boolean;
 }
+
+export interface PostMediaStorage {
+  id: string;
+}
+
+export interface PostPhotoStories {
+  success: boolean;
+  post_id: string;
+}

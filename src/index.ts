@@ -1,9 +1,16 @@
-import axios, { AxiosError, AxiosInstance } from "axios";
-import { ConstructorMain, CreatePost, IMain } from "./interfaces/main";
+import axios, { AxiosInstance } from "axios";
+import {
+  ConstructorMain,
+  CreatePost,
+  CreateStories,
+  IMain,
+} from "./interfaces/main";
 import {
   DeletePost,
   GetPosts,
   PostItem,
+  PostMediaStorage,
+  PostPhotoStories,
   PostPost,
   UpdatePost,
 } from "./interfaces/meta";
@@ -80,41 +87,23 @@ export default class Main implements IMain {
       })
     ).data.success;
   }
-}
 
-{
-  const main = new Main({
-    pageId: "252900751237310",
-    apiVersion: "v21.0",
-    pageAccessToken:
-      "EAAEG8x0DQWgBO8ASf7WfC31p7m316LHHZB5jBtdbWO7DHEk5IN1AI9BbdWSlsFVCibkXqxrthM3ZBqpJdmeVnH5GXQZBU53aUMSLR5e1W3THojJXI8vNeYMc9nQxuQgDEUSqKK5BowfOA94utp0BlqcBa3k3n9FcFVkolZCry4UZBwAQpQsZAiZAlbZAdlhZBtW9FpaZAYhZBv1rHgqbnPRcbrT42vW3asosoIZD",
-  });
+  public async saveMediaInMetStorageByUrl(url: any): Promise<string> {
+    return (
+      await this.api.post<PostMediaStorage>(`/me/photos`, {
+        published: false,
+        access_token: this.pageAccessToken,
+        url,
+      })
+    ).data.id;
+  }
 
-  (async () => {
-    try {
-      // const posts = await main.getAllPosts();
-      // console.log(posts);
-      // const tomorrow = new Date();
-      // tomorrow.setDate(tomorrow.getDate() + 1);
-      // const newPost = await main.createPost({
-      //   message: "Hello, World!",
-      //   publishNow: false,
-      //   scheduledPublishTimeUnix: Math.floor(tomorrow.getTime() / 1000),
-      // });
-      // console.log(newPost);
-      // const url = main.getPostUrlById("252900751237310_122186207066230378");
-      // console.log(url);
-      // const updated = await main.updatePost(
-      //   "252900751237310_122186208584230378",
-      //   "Hello, World! Updated",
-      // );
-      // console.log(updated);
-      const deleted = await main.deletePost(
-        "252900751237310_122186207990230378",
-      );
-      console.log(deleted);
-    } catch (error) {
-      console.log(error as AxiosError);
-    }
-  })();
+  public async postStories({ photo_id }: CreateStories): Promise<string> {
+    return (
+      await this.api.post<PostPhotoStories>(`/${this.pageId}/photo_stories`, {
+        access_token: this.pageAccessToken,
+        photo_id,
+      })
+    ).data.post_id;
+  }
 }
