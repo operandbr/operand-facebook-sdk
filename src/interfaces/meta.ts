@@ -1,41 +1,125 @@
-export interface PostItem {
+export interface PagePost {
   created_time: string;
   message: string;
   id: string;
 }
 
-export interface Cursors {
+export interface PaginationCursors {
   before: string;
   after: string;
 }
 
-export interface Paging {
-  cursors: Cursors;
+export interface PaginationInfo {
+  cursors: PaginationCursors;
 }
 
-export interface GetPosts {
-  data: PostItem[];
-  paging: Paging;
+export interface GetPagePostsResponse {
+  data: PagePost[];
+  paging: PaginationInfo;
 }
 
-export interface PostPost {
+export interface CreatePagePostResponse {
   id: string;
   post_id?: string;
 }
 
-export interface UpdatePost {
+export interface UpdatePagePostResponse {
   success: boolean;
 }
 
-export interface DeletePost {
+export interface DeletePagePostResponse {
   success: boolean;
 }
 
-export interface PostMediaStorage {
+export interface SaveMediaStorageResponse {
   id: string;
 }
 
-export interface PostPhotoStories {
+export interface CreatePhotoStoriesResponse {
   success: boolean;
   post_id: string;
+}
+
+export interface CreateAccessTokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface GetPageAccountsResponse {
+  data: Array<{
+    id: string;
+    name?: string;
+    about?: string;
+    category?: string;
+    category_list?: Array<{ id: string; name: string }>;
+    location?: {
+      city?: string;
+      country?: string;
+      latitude?: number;
+      longitude?: number;
+      street?: string;
+      zip?: string;
+    };
+    fan_count?: number;
+    access_token?: string;
+    tasks?: string[];
+    picture?: {
+      data: {
+        url: string;
+        width?: number;
+        height?: number;
+        is_silhouette?: boolean;
+      };
+    };
+    cover?: {
+      id: string;
+      source: string;
+      offset_y?: number;
+      offset_x?: number;
+    };
+    photos?: {
+      data: Array<{
+        id: string;
+        name?: string;
+        created_time?: string;
+        picture?: string;
+      }>;
+    };
+    videos?: {
+      data: Array<{
+        id: string;
+        title?: string;
+        description?: string;
+        picture?: string;
+        source?: string;
+      }>;
+    };
+    engagement?: {
+      count?: number;
+      social_sentence?: string;
+    };
+    is_published?: boolean;
+    is_verified?: boolean;
+    verification_status?: string;
+    website?: string;
+    emails?: string[];
+    phone?: string;
+    instagram_business_account?: { id: string };
+    hours?: {
+      monday?: string;
+      tuesday?: string;
+      wednesday?: string;
+      thursday?: string;
+      friday?: string;
+      saturday?: string;
+      sunday?: string;
+    };
+    created_time?: string;
+    bio?: string;
+    link?: string;
+    business?: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
