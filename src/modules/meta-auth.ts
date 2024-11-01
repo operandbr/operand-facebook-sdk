@@ -1,6 +1,6 @@
-import { CreateMetaAuth } from "./interfaces/main";
-import { CreateAccessTokenResponse } from "./interfaces/meta";
-import { generateAxiosInstance } from "./utils/api";
+import { CreateMetaAuth } from "../interfaces/main";
+import { CreateAccessTokenResponse } from "../interfaces/meta";
+import { generateAxiosInstance } from "../utils/api";
 
 export class MetaAuth {
   public static async createAccessToken({

@@ -5,7 +5,7 @@ import {
   CreateStories,
   GetAccounts,
   IMetaPage,
-} from "./interfaces/main";
+} from "../interfaces/main";
 import {
   DeletePagePostResponse,
   GetPageAccountsResponse,
@@ -17,13 +17,13 @@ import {
   CreatePhotoStoriesResponse,
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
-} from "./interfaces/meta";
-import { generateAxiosInstance } from "./utils/api";
+} from "../interfaces/meta";
+import { generateAxiosInstance } from "../utils/api";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 import * as FormData from "form-data";
 import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
-import { OperandError } from "./error/operand-error";
+import { OperandError } from "../error/operand-error";
 
 export class MetaPage implements IMetaPage {
   private readonly pageAccessToken: string;

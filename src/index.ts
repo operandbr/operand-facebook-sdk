@@ -1,4 +1,4 @@
-import { MetaAuth } from "./meta-auth";
-import { MetaPage } from "./meta-page";
+import { MetaAuth } from "./modules/meta-auth";
+import { MetaPage } from "./modules/meta-page";
 
 export { MetaAuth, MetaPage };
