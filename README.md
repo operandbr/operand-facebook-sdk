@@ -4,7 +4,7 @@
 
 ### First, install lib:
 ```sh
-  npm install operand-facebook-sdk@1.0.0
+  npm install operand-facebook-sdk@latest
 ```
 ### Next, import with ES6 or CommonJS:
 
