@@ -311,7 +311,7 @@ export class MetaPage implements IMetaPage {
       );
     }
 
-    if (mediaType === "none") {
+    if (!mediaType && message) {
       return this.createTextPost(message, publishNow, datePublish);
     }
 
@@ -324,7 +324,7 @@ export class MetaPage implements IMetaPage {
       return this.uploadVideo(post.video, message, publishNow, datePublish);
     }
 
-    throw new OperandError("Invalid media source.");
+    throw new OperandError("Invalid parameters.");
   }
 
   public async updatePost(postId: string, message: string): Promise<boolean> {

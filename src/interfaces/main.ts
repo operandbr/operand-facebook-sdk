@@ -57,33 +57,14 @@ type VideoMediaItem = {
   value: string;
 };
 
-type CreatePostWithPhotos = {
-  mediaType: "photo";
-  photos: PhotoMediaItem[];
+export type CreatePost = {
+  mediaType?: "photo" | "video";
   message?: string;
   publishNow: boolean;
   datePublish?: Date;
+  photos?: PhotoMediaItem[];
+  video?: VideoMediaItem;
 };
-
-type CreatePostWithVideos = {
-  mediaType: "video";
-  video: VideoMediaItem;
-  message?: string;
-  publishNow: boolean;
-  datePublish?: Date;
-};
-
-type CreatePostWithoutMedia = {
-  mediaType?: "none";
-  message: string;
-  publishNow: boolean;
-  datePublish?: Date;
-};
-
-export type CreatePost =
-  | CreatePostWithVideos
-  | CreatePostWithPhotos
-  | CreatePostWithoutMedia;
 
 type CreateStoriesPath = {
   mediaSource: "local";
