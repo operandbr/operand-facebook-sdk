@@ -1,8 +1,10 @@
-# Documentation
+# Welcome to the best SDK for communicating with api's meta
 
-## Classes
+## Documentation
 
-### `MetaAuth`
+### Classes
+
+#### `MetaAuth`
 
 Provides authentication for generating access tokens for the Meta API.
 
@@ -20,18 +22,18 @@ Provides authentication for generating access tokens for the Meta API.
 
 ---
 
-### `MetaPage`
+#### `MetaPage`
 
 Handles operations for managing Meta pages, including posting, updating, and deleting posts, as well as creating stories.
 
-#### Constructor
+##### Constructor
 
 - **Parameters**:
   - `pageAccessToken`: Access token for the page.
   - `pageId`: ID of the page to manage.
   - `apiVersion`: Version of the API to use.
 
-#### Methods
+##### Methods
 
 - `getAccounts(options: GetAccounts): Promise<any>`
   - **Description**: Retrieves accounts associated with the page.
@@ -74,7 +76,7 @@ Handles operations for managing Meta pages, including posting, updating, and del
     - `story`: Story configuration including media type and source.
   - **Returns**: The ID of the created story.
 
-#### Private Methods
+##### Private Methods
 
 - `fileTypesPermitted(file: "video" | "photo", type: string): boolean`
   - **Description**: Checks if the file type is permitted.
@@ -114,9 +116,9 @@ Handles operations for managing Meta pages, including posting, updating, and del
 
 ---
 
-## Interfaces
+### Interfaces
 
-### `Meta`
+#### `Meta`
 
 ```typescript
 export interface PagePost {
@@ -262,7 +264,7 @@ export interface CreateFinishVideoUploadResponse {
 
 ```
 
-### `Main`
+#### `Main`
 
 ```typescript
 import { PagePost } from "./meta";
