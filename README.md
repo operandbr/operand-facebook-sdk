@@ -10,7 +10,7 @@
 
 - ES6
 ```javascript
-import { MetaPage } from 'easy-facebook-sdk';
+import { MetaPage } from 'operand-facebook-sdk';
 
 (async () => {
 	const page = new MetaPage({
