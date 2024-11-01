@@ -1,4 +1,9 @@
+# PACKAGE
 node_modules/
 
+# BUILD
 build/
 dist/
+
+# TEST
+coverage/

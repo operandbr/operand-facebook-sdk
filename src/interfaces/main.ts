@@ -17,34 +17,34 @@ export type CreateMetaAuth = {
 };
 
 export type GetAccounts = {
-  fields: [
-    "id",
-    "name",
-    "about",
-    "category",
-    "category_list",
-    "location",
-    "fan_count",
-    "access_token",
-    "tasks",
-    "picture",
-    "cover",
-    "photos",
-    "videos",
-    "engagement",
-    "is_published",
-    "is_verified",
-    "verification_status",
-    "website",
-    "emails",
-    "phone",
-    "instagram_business_account",
-    "hours",
-    "created_time",
-    "bio",
-    "link",
-    "business",
-  ];
+  fields: Array<
+    | "id"
+    | "name"
+    | "about"
+    | "category"
+    | "category_list"
+    | "location"
+    | "fan_count"
+    | "access_token"
+    | "tasks"
+    | "picture"
+    | "cover"
+    | "photos"
+    | "videos"
+    | "engagement"
+    | "is_published"
+    | "is_verified"
+    | "verification_status"
+    | "website"
+    | "emails"
+    | "phone"
+    | "instagram_business_account"
+    | "hours"
+    | "created_time"
+    | "bio"
+    | "link"
+    | "business"
+  >;
 };
 
 type PhotoMediaItem = {
