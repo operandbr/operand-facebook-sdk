@@ -17,12 +17,17 @@ import {
   PagePost,
   CreatePhotoStoriesResponse,
   CreateAccessTokenResponse,
+  CreateStartVideoUploadResponse,
+  CreateFinishVideoUploadResponse,
 } from "./interfaces/meta";
 import { generateAxiosInstance } from "./utils/api";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 import * as FormData from "form-data";
-import * as path from "node:path";
+import * as ffmpeg from "fluent-ffmpeg";
+import * as nodeStream from "node:stream";
+import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
+import { OperandError } from "./error/operand-error";
 
 export class MetaAuth {
   public static async createAccessToken({
@@ -49,11 +54,13 @@ export class MetaPage implements IMetaPage {
   private readonly pageAccessToken: string;
   private readonly pageId: string;
   private readonly api: AxiosInstance;
+  private readonly apiVideo: AxiosInstance;
 
   constructor({ pageAccessToken, pageId, apiVersion }: ConstructorMain) {
     this.pageId = pageId;
     this.pageAccessToken = pageAccessToken;
     this.api = generateAxiosInstance(apiVersion);
+    this.apiVideo = generateAxiosInstance(apiVersion, true);
   }
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
@@ -76,6 +83,62 @@ export class MetaPage implements IMetaPage {
     return status.size / 1024 / 1024 <= 4;
   }
 
+  private async extractVideoMetadata(
+    pathOrBuffer: string | Buffer,
+    isBuffer: boolean,
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const command = ffmpeg();
+
+      if (isBuffer && Buffer.isBuffer(pathOrBuffer)) {
+        const stream = new nodeStream.Readable();
+        stream.push(pathOrBuffer);
+        stream.push(null);
+        command.input(stream);
+      } else if (typeof pathOrBuffer === "string") {
+        command.input(pathOrBuffer);
+      } else {
+        reject(
+          new OperandError(
+            "Invalid input format for video metadata extraction.",
+          ),
+        );
+        return;
+      }
+
+      command.ffprobe((err, metadata) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(metadata);
+        }
+      });
+    });
+  }
+
+  private async getVideoDuration(
+    pathOrBuffer: string | Buffer,
+    isBuffer: boolean,
+  ): Promise<number> {
+    const videoMetadata = await this.extractVideoMetadata(
+      pathOrBuffer,
+      isBuffer,
+    );
+    return videoMetadata.format.duration;
+  }
+
+  private validatePublishDate(datePublish: Date): boolean {
+    const now = new Date();
+
+    const tenMinutesFromNow = addMinutes(now, 10);
+    const sixMonthsFromNow = addMonths(now, 6);
+
+    return (
+      isBefore(datePublish, tenMinutesFromNow) ||
+      isAfter(datePublish, sixMonthsFromNow)
+    );
+  }
+
   private async savePhotoInMetaStorageByUrl(url: string): Promise<string> {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
@@ -83,17 +146,17 @@ export class MetaPage implements IMetaPage {
     const fileType = await FileType.fromBuffer(arrayBuffer);
 
     if (!fileType) {
-      throw new Error("Impossible to get the file type of file.");
+      throw new OperandError("Impossible to get the file type of file.");
     }
 
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
-      throw new Error(
+      throw new OperandError(
         "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
       );
     }
 
     if (!(await this.verifyPhotoSize(Buffer.from(arrayBuffer), true))) {
-      throw new Error("The photo must be less or equal to 4MB.");
+      throw new OperandError("The photo must be less or equal to 4MB.");
     }
 
     return (
@@ -109,17 +172,17 @@ export class MetaPage implements IMetaPage {
     const fileType = await FileType.fromFile(path);
 
     if (!fileType) {
-      throw new Error("Impossible to get the file type of file.");
+      throw new OperandError("Impossible to get the file type of file.");
     }
 
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
-      throw new Error(
+      throw new OperandError(
         "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
       );
     }
 
     if (!(await this.verifyPhotoSize(path, false))) {
-      throw new Error("The photo must be less or equal to 4MB.");
+      throw new OperandError("The photo must be less or equal to 4MB.");
     }
 
     const fileStream = fs.createReadStream(path);
@@ -140,6 +203,33 @@ export class MetaPage implements IMetaPage {
     );
 
     return response.data.id;
+  }
+
+  private async saveVideoInMetaStorageMomentaryByUrl(
+    video: string,
+  ): Promise<string> {
+    const {
+      data: { upload_url, video_id },
+    } = await this.api.post<CreateStartVideoUploadResponse>(
+      `${this.pageId}/video_stories`,
+      {
+        upload_phase: "start",
+        access_token: this.pageAccessToken,
+      },
+    );
+
+    await fetch(upload_url, {
+      method: "POST",
+      body: JSON.stringify({
+        file_url: video,
+      }),
+      headers: {
+        Authorization: `OAuth ${this.pageAccessToken}`,
+        file_url: video,
+      },
+    });
+
+    return video_id;
   }
 
   public async getAccounts({ fields }: GetAccounts): Promise<any> {
@@ -167,31 +257,143 @@ export class MetaPage implements IMetaPage {
     return `https://www.facebook.com/${this.pageId}/posts/${postId}`;
   }
 
-  public async createPost({
-    message,
-    publishNow,
-    scheduledPublishTimeUnix,
-    url,
-  }: CreatePost): Promise<string> {
-    if (!publishNow && !scheduledPublishTimeUnix) {
-      throw new Error(
-        "You must provide the scheduledPublishTimeUnix if you don't want to publish now.",
-      );
-    }
+  private async uploadPhotos(
+    photos: Array<{ source: string; value: string }>,
+  ): Promise<string[]> {
+    return Promise.all(
+      photos.map((photo) =>
+        photo.source === "url"
+          ? this.savePhotoInMetaStorageByUrl(photo.value)
+          : this.savePhotoInMetaStorageByPath(photo.value),
+      ),
+    );
+  }
 
-    const post = (
+  private async createTextPost(
+    message: string,
+    publishNow: boolean,
+    datePublish?: Date,
+  ): Promise<string> {
+    const newPost = (
       await this.api.post<CreatePagePostResponse>(`/${this.pageId}/feed`, {
         access_token: this.pageAccessToken,
         message,
         ...(!publishNow && {
-          scheduled_publish_time: scheduledPublishTimeUnix,
+          scheduled_publish_time: Math.floor(getTime(datePublish) / 1000),
           published: publishNow,
         }),
-        ...(url && { url }),
       })
     ).data;
 
-    return post.post_id || post.id;
+    return newPost.post_id || newPost.id;
+  }
+
+  private async createMediaPost(
+    message: string,
+    mediaIds: string[],
+    publishNow: boolean,
+    datePublish?: Date,
+  ): Promise<string> {
+    const newPost = (
+      await this.api.post<CreatePagePostResponse>(`/${this.pageId}/feed`, {
+        access_token: this.pageAccessToken,
+        message,
+        ...(!publishNow && {
+          scheduled_publish_time: Math.floor(getTime(datePublish) / 1000),
+          published: publishNow,
+        }),
+        attached_media: mediaIds.map((id) => ({
+          media_fbid: id,
+        })),
+      })
+    ).data;
+
+    return newPost.post_id || newPost.id;
+  }
+
+  private async uploadVideo(
+    video: { source: string; value: string },
+    message: string,
+    publishNow: boolean,
+    datePublish?: Date,
+  ): Promise<string> {
+    if (video.source === "url") {
+      const response = await fetch(video.value);
+      const arrayBuffer = await response.arrayBuffer();
+      const fileType = await FileType.fromBuffer(arrayBuffer);
+
+      if (!fileType) {
+        throw new OperandError("Impossible to get the file type of file.");
+      }
+
+      if (!this.fileTypesPermitted("video", fileType.ext)) {
+        throw new OperandError(
+          "This file type is not permitted. File types permitted: mp4.",
+        );
+      }
+
+      if (!(await this.verifyPhotoSize(Buffer.from(arrayBuffer), true))) {
+        throw new OperandError("The video must be less or equal to 4MB.");
+      }
+
+      const formData = new FormData();
+      formData.append("description", message);
+      formData.append("file_url", video.value);
+      formData.append("access_token", this.pageAccessToken);
+
+      if (!publishNow) {
+        formData.append("published", "false");
+        formData.append(
+          "scheduled_publish_time",
+          Math.floor(getTime(datePublish) / 1000),
+        );
+      }
+
+      const newPost = await this.apiVideo.post<SaveMediaStorageResponse>(
+        `/${this.pageId}/videos`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
+        },
+      );
+
+      return newPost.data.id;
+    }
+
+    throw new OperandError("Invalid video source.");
+  }
+
+  public async createPost(post: CreatePost): Promise<string> {
+    const { message, publishNow, datePublish, mediaType } = post;
+
+    if (!publishNow && !datePublish) {
+      throw new OperandError(
+        "You must provide the datePublish if you don't want to publish now.",
+      );
+    }
+
+    if (!publishNow && this.validatePublishDate(new Date(datePublish))) {
+      throw new OperandError(
+        "The datePublish must be between 10 minutes from now and 6 months from now.",
+      );
+    }
+
+    if (mediaType === "none") {
+      return this.createTextPost(message, publishNow, datePublish);
+    }
+
+    if (mediaType === "photo") {
+      const mediaIds = await this.uploadPhotos(post.photos);
+      return this.createMediaPost(message, mediaIds, publishNow, datePublish);
+    }
+
+    if (mediaType === "video") {
+      return this.uploadVideo(post.video, message, publishNow, datePublish);
+    }
+
+    throw new OperandError("Invalid media source.");
   }
 
   public async updatePost(postId: string, message: string): Promise<boolean> {
@@ -214,44 +416,50 @@ export class MetaPage implements IMetaPage {
   }
 
   public async createStories(story: CreateStories): Promise<string> {
-    if (story.midia === "photo") {
-      const photoId =
-        story.mediaSource === "url"
-          ? await this.savePhotoInMetaStorageByUrl(story.url)
-          : await this.savePhotoInMetaStorageByPath(story.path);
-
-      return (
-        await this.api.post<CreatePhotoStoriesResponse>(
-          `/${this.pageId}/photo_stories`,
-          {
-            access_token: this.pageAccessToken,
-            photo_id: photoId,
-          },
-        )
-      ).data.post_id;
+    if (story.mediaType === "photo") {
+      return await this.createPhotoStory(story);
+    } else if (story.mediaType === "video") {
+      return await this.createVideoStory(story);
+    } else {
+      throw new Error("Unsupported media type.");
     }
+  }
 
-    throw new Error("Only photo stories are supported at the moment.");
+  private async createPhotoStory(story: CreateStories): Promise<string> {
+    const photoId =
+      story.mediaSource === "url"
+        ? await this.savePhotoInMetaStorageByUrl(story.url)
+        : await this.savePhotoInMetaStorageByPath(story.path);
+
+    const response = await this.api.post<CreatePhotoStoriesResponse>(
+      `/${this.pageId}/photo_stories`,
+      {
+        access_token: this.pageAccessToken,
+        photo_id: photoId,
+      },
+    );
+
+    return response.data.post_id;
+  }
+
+  private async createVideoStory(story: CreateStories): Promise<string> {
+    if (story.mediaSource === "url") {
+      const videoId = await this.saveVideoInMetaStorageMomentaryByUrl(
+        story.url,
+      );
+
+      const {
+        data: { post_id },
+      } = await this.api.post<CreateFinishVideoUploadResponse>(
+        `${this.pageId}/video_stories`,
+        {
+          upload_phase: "finish",
+          video_id: videoId,
+          access_token: this.pageAccessToken,
+        },
+      );
+
+      return post_id;
+    }
   }
 }
-
-(async () => {
-  try {
-    const page = new MetaPage({
-      pageAccessToken:
-        "EAAEG8x0DQWgBO09Eg9fYn0OEujdzOCelMSZBiKw3Dh0aKgLZBv3ZB3CGY7xZBiepq1wkfWy1b6ZCqcmVCEvjSkloz6DbzYiGnn9ydfHpW3ZBBS2Pzi3CtuOlwsTzHyIrlMqRq8wRC78F9E65LNZCSDcMPpcemx6iWyeHEc3y1onDe609PTjJrmKts7ufVISTgijZAlyNeZBFg1zblBdDlKKQB64ZBWUMUZBQaUZD",
-      apiVersion: "v21.0",
-      pageId: "252900751237310",
-    });
-
-    const createStories = await page.createStories({
-      mediaSource: "local",
-      midia: "photo",
-      path: "https://svs.gsfc.nasa.gov/vis/a030000/a030000/a030028/frames/6750x3375_2x1_30p/split-750m/dnb_land_ocean_ice.2012.13500x13500.A1-0000.png",
-    });
-
-    console.log(createStories);
-  } catch (error) {
-    console.log(error?.response?.data || error);
-  }
-})();

@@ -47,22 +47,53 @@ export type GetAccounts = {
   ];
 };
 
-export type CreatePost = {
+type PhotoMediaItem = {
+  source: "url" | "path";
+  value: string;
+};
+
+type VideoMediaItem = {
+  source: "url" | "path";
+  value: string;
+};
+
+type CreatePostWithPhotos = {
+  mediaType: "photo";
+  photos: PhotoMediaItem[];
+  message?: string;
+  publishNow: boolean;
+  datePublish?: Date;
+};
+
+type CreatePostWithVideos = {
+  mediaType: "video";
+  video: VideoMediaItem;
+  message?: string;
+  publishNow: boolean;
+  datePublish?: Date;
+};
+
+type CreatePostWithoutMedia = {
+  mediaType?: "none";
   message: string;
   publishNow: boolean;
-  scheduledPublishTimeUnix?: number;
-  url?: string;
+  datePublish?: Date;
 };
+
+export type CreatePost =
+  | CreatePostWithVideos
+  | CreatePostWithPhotos
+  | CreatePostWithoutMedia;
 
 type CreateStoriesPath = {
   mediaSource: "local";
-  midia: "photo" | "video";
+  mediaType: "photo" | "video";
   path: string;
 };
 
 type CreateStoriesUrl = {
   mediaSource: "url";
-  midia: "photo" | "video";
+  mediaType: "photo" | "video";
   url: string;
 };
 

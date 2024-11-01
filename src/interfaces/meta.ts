@@ -123,3 +123,18 @@ export interface GetPageAccountsResponse {
     };
   }>;
 }
+
+export interface CreateStartVideoUploadResponse {
+  video_id: string;
+  upload_url: string;
+}
+
+export interface CreateLoadingVideoUploadResponse {
+  success: boolean;
+}
+
+export interface CreateFinishVideoUploadResponse {
+  success: boolean;
+  message: string;
+  post_id: string;
+}
