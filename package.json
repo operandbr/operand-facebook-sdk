@@ -1,6 +1,6 @@
 {
-  "name": "easy-facebook-sdk",
-  "version": "1.0.6",
+  "name": "operand-facebook-sdk",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest"
