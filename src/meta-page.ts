@@ -1,7 +1,6 @@
 import { AxiosInstance } from "axios";
 import {
   ConstructorMain,
-  CreateMetaAuth,
   CreatePost,
   CreateStories,
   GetAccounts,
@@ -16,7 +15,6 @@ import {
   UpdatePagePostResponse,
   PagePost,
   CreatePhotoStoriesResponse,
-  CreateAccessTokenResponse,
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
 } from "./interfaces/meta";
@@ -26,27 +24,6 @@ import * as fs from "node:fs";
 import * as FormData from "form-data";
 import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
 import { OperandError } from "./error/operand-error";
-
-export class MetaAuth {
-  public static async createAccessToken({
-    client_id,
-    client_secret,
-    redirect_uri,
-    apiVersion,
-    code,
-  }: CreateMetaAuth): Promise<string> {
-    const api = generateAxiosInstance(apiVersion);
-
-    return (
-      await api.post<CreateAccessTokenResponse>(`/oauth/access_token`, {
-        client_id,
-        client_secret,
-        code,
-        redirect_uri,
-      })
-    ).data.access_token;
-  }
-}
 
 export class MetaPage implements IMetaPage {
   private readonly pageAccessToken: string;
