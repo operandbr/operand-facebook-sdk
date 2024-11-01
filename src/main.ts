@@ -24,8 +24,6 @@ import { generateAxiosInstance } from "./utils/api";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 import * as FormData from "form-data";
-import * as ffmpeg from "fluent-ffmpeg";
-import * as nodeStream from "node:stream";
 import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
 import { OperandError } from "./error/operand-error";
 
@@ -81,50 +79,6 @@ export class MetaPage implements IMetaPage {
 
     const status = await fs.promises.stat(value as string);
     return status.size / 1024 / 1024 <= 4;
-  }
-
-  private async extractVideoMetadata(
-    pathOrBuffer: string | Buffer,
-    isBuffer: boolean,
-  ): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const command = ffmpeg();
-
-      if (isBuffer && Buffer.isBuffer(pathOrBuffer)) {
-        const stream = new nodeStream.Readable();
-        stream.push(pathOrBuffer);
-        stream.push(null);
-        command.input(stream);
-      } else if (typeof pathOrBuffer === "string") {
-        command.input(pathOrBuffer);
-      } else {
-        reject(
-          new OperandError(
-            "Invalid input format for video metadata extraction.",
-          ),
-        );
-        return;
-      }
-
-      command.ffprobe((err, metadata) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(metadata);
-        }
-      });
-    });
-  }
-
-  private async getVideoDuration(
-    pathOrBuffer: string | Buffer,
-    isBuffer: boolean,
-  ): Promise<number> {
-    const videoMetadata = await this.extractVideoMetadata(
-      pathOrBuffer,
-      isBuffer,
-    );
-    return videoMetadata.format.duration;
   }
 
   private validatePublishDate(datePublish: Date): boolean {
