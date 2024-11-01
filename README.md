@@ -1,5 +1,46 @@
 # Welcome to the best SDK for communicating with api's meta
 
+## Get Started
+
+### First, install lib:
+```sh
+  npm install operand-facebook-sdk@1.0.0
+```
+### Next, import with ES6 or CommonJS:
+
+- ES6
+```javascript
+import { MetaPage } from 'easy-facebook-sdk';
+
+(async () => {
+	const page = new MetaPage({
+		apiVersion: 'v21.0',
+		pageId: 'your-page-id',
+		pageAccessToken: 'your-page-access-token',
+	})
+
+	const pageData = await page.getAllPosts()
+
+	console.log({ pageData });
+})()
+```
+- CommonJS
+```javascript
+const OPSDK = require("operand-facebook-sdk");
+
+(async () => {
+	const page = new OPSDK.MetaPage({
+		apiVersion: 'v21.0',
+		pageId: 'your-page-id',
+		pageAccessToken: 'your-page-access-token',
+	})
+
+	const pageData = await page.getAllPosts()
+
+	console.log({ pageData });
+})()
+```
+
 ## Documentation
 
 ### Classes
