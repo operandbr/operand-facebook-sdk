@@ -16,35 +16,38 @@ export type CreateMetaAuth = {
   code: string;
 };
 
+export type FieldsPage = Array<
+  | "id"
+  | "name"
+  | "about"
+  | "category"
+  | "category_list"
+  | "location"
+  | "fan_count"
+  | "access_token"
+  | "tasks"
+  | "picture"
+  | "cover"
+  | "photos"
+  | "videos"
+  | "engagement"
+  | "is_published"
+  | "is_verified"
+  | "verification_status"
+  | "website"
+  | "emails"
+  | "phone"
+  | "instagram_business_account"
+  | "hours"
+  | "created_time"
+  | "bio"
+  | "link"
+  | "business"
+  | string
+>;
+
 export type GetAccounts = {
-  fields: Array<
-    | "id"
-    | "name"
-    | "about"
-    | "category"
-    | "category_list"
-    | "location"
-    | "fan_count"
-    | "access_token"
-    | "tasks"
-    | "picture"
-    | "cover"
-    | "photos"
-    | "videos"
-    | "engagement"
-    | "is_published"
-    | "is_verified"
-    | "verification_status"
-    | "website"
-    | "emails"
-    | "phone"
-    | "instagram_business_account"
-    | "hours"
-    | "created_time"
-    | "bio"
-    | "link"
-    | "business"
-  >;
+  fields: FieldsPage;
   accessToken: string;
 };
 

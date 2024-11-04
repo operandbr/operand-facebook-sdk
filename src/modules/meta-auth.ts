@@ -1,4 +1,4 @@
-import { CreateMetaAuth, GetAccounts } from "../interfaces/page";
+import { CreateMetaAuth, FieldsPage, GetAccounts } from "../interfaces/page";
 import {
   CreateAccessTokenResponse,
   FacebookPage,
@@ -17,8 +17,9 @@ export class MetaAuth {
     accessToken: string;
     getAccounts: ({
       fields,
-      accessToken,
-    }: GetAccounts) => Promise<FacebookPage[]>;
+    }: {
+      fields: FieldsPage;
+    }) => Promise<FacebookPage[]>;
   }> {
     const api = generateAxiosInstance(apiVersion);
 
@@ -33,7 +34,9 @@ export class MetaAuth {
 
     return {
       accessToken,
-      getAccounts: MetaAuth.getAccounts,
+      getAccounts: ({ fields }: { fields: FieldsPage }) => {
+        return MetaAuth.getAccounts({ fields, accessToken });
+      },
     };
   }
 
