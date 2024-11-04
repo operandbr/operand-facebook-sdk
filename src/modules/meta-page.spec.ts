@@ -1,7 +1,7 @@
 import { generateAxiosInstance } from "../utils/api";
 import * as FileType from "file-type";
 import { MetaPage } from "./meta-page";
-import { CreatePost } from "@/interfaces/main";
+import { CreatePost } from "../interfaces/page";
 
 jest.mock("../utils/api");
 jest.mock("node:fs");
@@ -44,7 +44,6 @@ describe("MetaPage", () => {
       const post = {
         message: "Test message",
         publishNow: true,
-        mediaType: "none",
       } as CreatePost;
       const mockData = { data: { id: "12345" } };
       axiosMock.post.mockResolvedValueOnce(mockData);
@@ -64,7 +63,6 @@ describe("MetaPage", () => {
         message: "Test message",
         publishNow: false,
         datePublish: new Date(Date.now() - 600000),
-        mediaType: "none",
       } as CreatePost;
 
       await expect(metaPage.createPost(post)).rejects.toThrow(

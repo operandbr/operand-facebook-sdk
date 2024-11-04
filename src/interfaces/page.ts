@@ -45,6 +45,7 @@ export type GetAccounts = {
     | "link"
     | "business"
   >;
+  accessToken: string;
 };
 
 type PhotoMediaItem = {
@@ -87,5 +88,4 @@ export interface IMetaPage {
   updatePost(postId: string, message: string): Promise<boolean>;
   deletePost(postId: string): Promise<boolean>;
   createStories(data: CreateStories): Promise<string>;
-  getAccounts(data: GetAccounts): Promise<GetAccounts>;
 }

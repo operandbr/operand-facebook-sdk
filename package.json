@@ -1,7 +1,7 @@
 {
   "name": "operand-facebook-sdk",
-  "version": "1.0.3",
-  "main": "dist/index.js",
+  "version": "1.0.4",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "jest"
   },

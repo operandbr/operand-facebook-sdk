@@ -3,12 +3,10 @@ import {
   ConstructorMain,
   CreatePost,
   CreateStories,
-  GetAccounts,
   IMetaPage,
-} from "../interfaces/main";
+} from "../interfaces/page";
 import {
   DeletePagePostResponse,
-  GetPageAccountsResponse,
   GetPagePostsResponse,
   SaveMediaStorageResponse,
   CreatePagePostResponse,
@@ -161,17 +159,6 @@ export class MetaPage implements IMetaPage {
     });
 
     return video_id;
-  }
-
-  public async getAccounts({ fields }: GetAccounts): Promise<any> {
-    return (
-      await this.api.get<GetPageAccountsResponse>(`/${this.pageId}`, {
-        params: {
-          access_token: this.pageAccessToken,
-          fields: fields.join(","),
-        },
-      })
-    ).data.data;
   }
 
   public async getAllPosts(): Promise<PagePost[]> {

@@ -1,4 +1,4 @@
-import { ApiVersion } from "@/interfaces/main";
+import { ApiVersion } from "@/interfaces/page";
 import axios from "axios";
 
 export const generateAxiosInstance = (
