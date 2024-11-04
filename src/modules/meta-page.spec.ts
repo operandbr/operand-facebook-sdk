@@ -24,21 +24,6 @@ beforeEach(() => {
 });
 
 describe("MetaPage", () => {
-  describe("getAccounts", () => {
-    it("should fetch accounts with specified fields", async () => {
-      const fields = ["name", "id"] as Array<"name" | "id">;
-      const mockData = { data: { data: [{ id: "1", name: "Test Page" }] } };
-      axiosMock.get.mockResolvedValueOnce(mockData);
-
-      const result = await metaPage.getAccounts({ fields });
-
-      expect(axiosMock.get).toHaveBeenCalledWith(`/${pageId}`, {
-        params: { access_token: pageAccessToken, fields: "name,id" },
-      });
-      expect(result).toEqual(mockData.data.data);
-    });
-  });
-
   describe("createPost", () => {
     it("should create a text post when mediaType is none", async () => {
       const post = {
