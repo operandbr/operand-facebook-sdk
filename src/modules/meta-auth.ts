@@ -1,9 +1,13 @@
-import { CreateMetaAuth, FieldsPage, GetAccounts } from "../interfaces/page";
+import {
+  CreateMetaAuth,
+  FieldsPage,
+  GetAccounts,
+} from "../interfaces/meta-auth";
 import {
   CreateAccessTokenResponse,
   FacebookPage,
   GetPageAccountsResponse,
-} from "../interfaces/meta";
+} from "../interfaces/meta-response";
 import { generateAxiosInstance } from "../utils/api";
 
 export class MetaAuth {

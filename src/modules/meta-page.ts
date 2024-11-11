@@ -4,7 +4,7 @@ import {
   CreatePost,
   CreateStories,
   IMetaPage,
-} from "../interfaces/page";
+} from "../interfaces/meta-page";
 import {
   DeletePagePostResponse,
   GetPagePostsResponse,
@@ -15,7 +15,7 @@ import {
   CreatePhotoStoriesResponse,
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
-} from "../interfaces/meta";
+} from "../interfaces/meta-response";
 import { generateAxiosInstance } from "../utils/api";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
@@ -267,7 +267,7 @@ export class MetaPage implements IMetaPage {
         );
       }
 
-      const newPost = await this.apiVideo.post<SaveMediaStorageResponse>(
+      const { data } = await this.apiVideo.post<SaveMediaStorageResponse>(
         `/${this.pageId}/videos`,
         formData,
         {
@@ -277,7 +277,7 @@ export class MetaPage implements IMetaPage {
         },
       );
 
-      return newPost.data.id;
+      return data.id;
     }
 
     throw new OperandError("Invalid video source.");
@@ -361,23 +361,22 @@ export class MetaPage implements IMetaPage {
   }
 
   private async createVideoStory(story: CreateStories): Promise<string> {
-    if (story.mediaSource === "url") {
-      const videoId = await this.saveVideoInMetaStorageMomentaryByUrl(
-        story.url,
-      );
+    const videoId =
+      story.mediaSource === "url"
+        ? await this.saveVideoInMetaStorageMomentaryByUrl(story.url)
+        : "";
 
-      const {
-        data: { post_id },
-      } = await this.api.post<CreateFinishVideoUploadResponse>(
-        `${this.pageId}/video_stories`,
-        {
-          upload_phase: "finish",
-          video_id: videoId,
-          access_token: this.pageAccessToken,
-        },
-      );
+    const {
+      data: { post_id },
+    } = await this.api.post<CreateFinishVideoUploadResponse>(
+      `${this.pageId}/video_stories`,
+      {
+        upload_phase: "finish",
+        video_id: videoId,
+        access_token: this.pageAccessToken,
+      },
+    );
 
-      return post_id;
-    }
+    return post_id;
   }
 }

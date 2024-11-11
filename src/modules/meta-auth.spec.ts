@@ -1,4 +1,4 @@
-import { CreateMetaAuth } from "../interfaces/page";
+import { CreateMetaAuth } from "../interfaces/meta-page";
 import axios from "axios";
 import { MetaAuth } from "./meta-auth";
 

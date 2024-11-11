@@ -1,7 +1,7 @@
 import { generateAxiosInstance } from "../utils/api";
 import * as FileType from "file-type";
 import { MetaPage } from "./meta-page";
-import { CreatePost } from "../interfaces/page";
+import { CreatePost } from "../interfaces/meta-page";
 
 jest.mock("../utils/api");
 jest.mock("node:fs");

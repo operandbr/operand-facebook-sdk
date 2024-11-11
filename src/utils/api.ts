@@ -1,4 +1,4 @@
-import { ApiVersion } from "@/interfaces/page";
+import { ApiVersion } from "@/interfaces/meta-auth";
 import axios from "axios";
 
 export const generateAxiosInstance = (
