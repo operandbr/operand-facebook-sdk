@@ -4,7 +4,7 @@ import { CreatePost, CreateStories } from "../interfaces/meta-page";
 import * as path from "node:path";
 import { PHOTO_URL_MOCK, VIDEO_URL_MOCK } from "../__test__/mocks";
 
-const originalFetch = global.fetch;
+// const originalFetch = global.fetch;
 
 jest.mock("axios");
 
@@ -341,7 +341,7 @@ describe("MetaPage", () => {
       const mockedFetch = jest.spyOn(global, "fetch");
 
       mockedFetch
-        .mockResolvedValueOnce((...args) => originalFetch(...args))
+        // .mockResolvedValueOnce((...args) => originalFetch(...args))
         .mockResolvedValueOnce(null);
 
       mockedAxios.post
