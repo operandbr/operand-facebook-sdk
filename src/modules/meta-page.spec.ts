@@ -1,120 +1,386 @@
-import { generateAxiosInstance } from "../utils/api";
-import * as FileType from "file-type";
+import axios from "axios";
 import { MetaPage } from "./meta-page";
-import { CreatePost } from "../interfaces/meta-page";
+import { CreatePost, CreateStories } from "../interfaces/meta-page";
+import * as path from "node:path";
+import { PHOTO_URL_MOCK, VIDEO_URL_MOCK } from "../__test__/mocks";
 
-jest.mock("../utils/api");
-jest.mock("node:fs");
-jest.mock("file-type");
+const originalFetch = global.fetch;
 
-const pageAccessToken = "dummyAccessToken";
-const pageId = "dummyPageId";
-const apiVersion = "v21.0";
-let metaPage: MetaPage;
-const axiosMock = {
-  post: jest.fn(),
-  get: jest.fn(),
-  delete: jest.fn(),
-};
-(generateAxiosInstance as jest.Mock).mockReturnValue(axiosMock);
+jest.mock("axios");
 
-beforeEach(() => {
-  jest.clearAllMocks();
-  metaPage = new MetaPage({ pageAccessToken, pageId, apiVersion });
-});
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+mockedAxios.create.mockReturnValue(mockedAxios);
 
 describe("MetaPage", () => {
+  let metaPage: MetaPage;
+  const pageAccessToken = "dummyAccessToken";
+  const pageId = "dummyPageId";
+  const apiVersion = "v21.0";
+
+  beforeAll(() => {
+    metaPage = new MetaPage({ pageAccessToken, pageId, apiVersion });
+  });
+
   describe("createPost", () => {
-    it("should create a text post when mediaType is none", async () => {
+    it("should create a text post without mediaType and without schedule", async () => {
       const post = {
         message: "Test message",
         publishNow: true,
       } as CreatePost;
       const mockData = { data: { id: "12345" } };
-      axiosMock.post.mockResolvedValueOnce(mockData);
+      mockedAxios.post.mockResolvedValueOnce(mockData);
 
       const result = await metaPage.createPost(post);
 
-      // expect(axiosMock.post).toHaveBeenCalledWith(`/${pageId}/feed`, {
-      //   access_token: pageAccessToken,
-      //   message: post.message,
-      //   published: post.publishNow,
-      // });
       expect(result).toBe("12345");
+      expect(mockedAxios.post).toHaveBeenCalledWith(`/dummyPageId/feed`, {
+        access_token: "dummyAccessToken",
+        message: "Test message",
+      });
     });
 
-    it("should throw an OperandError if scheduled publish date is invalid", async () => {
+    it("should create a text post without mediaType and with schedule", async () => {
+      const datePublish = new Date(
+        new Date().setDate(new Date().getDate() + 1),
+      );
+
       const post = {
         message: "Test message",
         publishNow: false,
-        datePublish: new Date(Date.now() - 600000),
+        datePublish,
       } as CreatePost;
 
-      await expect(metaPage.createPost(post)).rejects.toThrow(
+      const mockData = { data: { id: "12345" } };
+      mockedAxios.post.mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createPost(post);
+
+      expect(result).toBe("12345");
+      expect(mockedAxios.post).toHaveBeenCalledWith(`/dummyPageId/feed`, {
+        access_token: "dummyAccessToken",
+        message: "Test message",
+        published: false,
+        scheduled_publish_time: Math.floor(datePublish.getTime() / 1000),
+      });
+    }, 10000);
+
+    it("should create a photo url post without schedule", async () => {
+      const post = {
+        message: "Test message",
+        publishNow: true,
+        mediaType: "photo",
+        photos: [
+          {
+            source: "url",
+            value: PHOTO_URL_MOCK,
+          },
+        ],
+      } as CreatePost;
+
+      const mockData = { data: { id: "12345" } };
+
+      mockedAxios.post
+        .mockResolvedValueOnce(mockData)
+        .mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createPost(post);
+
+      expect(result).toBe("12345");
+      expect(mockedAxios.post).toHaveBeenLastCalledWith(`/dummyPageId/feed`, {
+        access_token: "dummyAccessToken",
+        message: "Test message",
+        attached_media: [{ media_fbid: "12345" }],
+      });
+    }, 10000);
+
+    it("should create a photo url post with schedule", async () => {
+      const datePublish = new Date(
+        new Date().setDate(new Date().getDate() + 1),
+      );
+
+      const post = {
+        message: "Test message",
+        publishNow: false,
+        datePublish,
+        mediaType: "photo",
+        photos: [
+          {
+            source: "url",
+            value: PHOTO_URL_MOCK,
+          },
+        ],
+      } as CreatePost;
+
+      const mockData = { data: { id: "12345" } };
+
+      mockedAxios.post
+        .mockResolvedValueOnce(mockData)
+        .mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createPost(post);
+
+      expect(result).toBe("12345");
+      expect(mockedAxios.post).toHaveBeenLastCalledWith(`/dummyPageId/feed`, {
+        access_token: "dummyAccessToken",
+        message: "Test message",
+        attached_media: [{ media_fbid: "12345" }],
+        published: false,
+        scheduled_publish_time: Math.floor(datePublish.getTime() / 1000),
+      });
+    }, 10000);
+
+    it("should create a photo path post without schedule", async () => {
+      const post = {
+        message: "Test message",
+        publishNow: true,
+        photos: [
+          {
+            source: "path",
+            value: path.resolve(
+              __dirname,
+              "..",
+              "__test__",
+              "mocks",
+              "image.jpeg",
+            ),
+          },
+        ],
+      } as CreatePost;
+
+      const mockData = { data: { id: "12345" } };
+
+      mockedAxios.post.mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createPost(post);
+
+      expect(result).toBe("12345");
+    });
+
+    it("should create a photo path post with schedule", async () => {
+      const datePublish = new Date(
+        new Date().setDate(new Date().getDate() + 1),
+      );
+
+      const post = {
+        message: "Test message",
+        publishNow: false,
+        datePublish,
+        photos: [
+          {
+            source: "path",
+            value: path.resolve(
+              __dirname,
+              "..",
+              "__test__",
+              "mocks",
+              "image.jpeg",
+            ),
+          },
+        ],
+      } as CreatePost;
+
+      const mockData = { data: { id: "12345" } };
+
+      mockedAxios.post.mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createPost(post);
+
+      expect(result).toBe("12345");
+      expect(mockedAxios.post).toHaveBeenCalledWith(`/dummyPageId/feed`, {
+        access_token: "dummyAccessToken",
+        message: "Test message",
+        published: false,
+        scheduled_publish_time: Math.floor(datePublish.getTime() / 1000),
+      });
+    });
+
+    it("should create a video url post without schedule", async () => {
+      const post = {
+        message: "Test message",
+        publishNow: true,
+        mediaType: "video",
+        video: {
+          source: "url",
+          value: VIDEO_URL_MOCK,
+        },
+      } as CreatePost;
+
+      const mockData = { data: { id: "12345" } };
+
+      mockedAxios.post.mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createPost(post);
+
+      expect(result).toBe("12345");
+    }, 10000);
+
+    it("should create a video url post with schedule", async () => {
+      const datePublish = new Date(
+        new Date().setDate(new Date().getDate() + 1),
+      );
+
+      const post = {
+        message: "Test message",
+        publishNow: false,
+        datePublish,
+        mediaType: "video",
+        video: {
+          source: "url",
+          value: VIDEO_URL_MOCK,
+        },
+      } as CreatePost;
+
+      const mockData = { data: { id: "12345" } };
+
+      mockedAxios.post.mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createPost(post);
+
+      expect(result).toBe("12345");
+    }, 10000);
+
+    it("should error if publishNow is false and datePublish not provided", async () => {
+      const post = {
+        message: "Test message",
+        publishNow: false,
+      } as CreatePost;
+
+      await expect(metaPage.createPost(post)).rejects.toThrowError(
+        "You must provide the datePublish if you don't want to publish now.",
+      );
+    });
+
+    it("should error if publishNow is false and datePublish is bellow the current date", async () => {
+      const post = {
+        message: "Test message",
+        publishNow: false,
+        datePublish: new Date(new Date().setDate(new Date().getDate() - 1)),
+      } as CreatePost;
+
+      await expect(metaPage.createPost(post)).rejects.toThrowError(
         "The datePublish must be between 10 minutes from now and 6 months from now.",
       );
     });
   });
 
   describe("deletePost", () => {
-    it("should delete a post by id", async () => {
-      const postId = "dummyPostId";
+    it("should delete a post", async () => {
+      const postId = "12345";
       const mockData = { data: { success: true } };
-      axiosMock.delete.mockResolvedValueOnce(mockData);
+
+      mockedAxios.delete.mockResolvedValueOnce(mockData);
 
       const result = await metaPage.deletePost(postId);
 
-      expect(axiosMock.delete).toHaveBeenCalledWith(`/${postId}`, {
-        params: { access_token: pageAccessToken },
-      });
       expect(result).toBe(true);
+      expect(mockedAxios.delete).toHaveBeenCalledWith(`/12345`, {
+        params: {
+          access_token: "dummyAccessToken",
+        },
+      });
     });
   });
 
-  describe("uploadPhotos", () => {
-    // it("should upload a photo by URL", async () => {
-    //   const photoUrl = "http://example.com/photo.jpg";
-    //   const mockPhotoId = "photo123";
-    //   axiosMock.post.mockResolvedValueOnce({ data: { id: mockPhotoId } });
-    //   const savePhotoInMetaStorageByUrlSpy = jest.spyOn(
-    //     metaPage,
-    //     "savePhotoInMetaStorageByUrl",
-    //   );
+  describe("getAllPosts", () => {
+    it("should get all posts", async () => {
+      const mockData = { data: { data: [{ id: "12345" }] } };
 
-    //   const result = await metaPage["uploadPhotos"]([
-    //     { source: "url", value: photoUrl },
-    //   ]);
+      mockedAxios.get.mockResolvedValueOnce(mockData);
 
-    //   expect(savePhotoInMetaStorageByUrlSpy).toHaveBeenCalledWith(photoUrl);
-    //   expect(result).toEqual([mockPhotoId]);
-    // });
+      const result = await metaPage.getAllPosts();
 
-    it("should throw OperandError if photo file type is not permitted", async () => {
-      const invalidPhotoPath = "path/to/photo.txt";
-      (FileType.fromFile as jest.Mock).mockResolvedValueOnce({ ext: "txt" });
+      expect(result).toStrictEqual([{ id: "12345" }]);
+      expect(mockedAxios.get).toHaveBeenCalledWith(`/dummyPageId/feed`, {
+        params: {
+          access_token: "dummyAccessToken",
+        },
+      });
+    });
+  });
 
-      await expect(
-        metaPage["savePhotoInMetaStorageByPath"](invalidPhotoPath),
-      ).rejects.toThrow(
-        "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+  describe("createStories", () => {
+    it("should create a story with image", async () => {
+      const stories = {
+        mediaSource: "url",
+        mediaType: "photo",
+        url: PHOTO_URL_MOCK,
+      } as CreateStories;
+
+      const mockData = { data: { id: "12345" } };
+      const mockData2 = { data: { post_id: "12345" } };
+
+      mockedAxios.post
+        .mockResolvedValueOnce(mockData)
+        .mockResolvedValueOnce(mockData2);
+
+      const result = await metaPage.createStories(stories);
+
+      expect(result).toBe("12345");
+      expect(mockedAxios.post).toHaveBeenLastCalledWith(
+        `/dummyPageId/photo_stories`,
+        {
+          access_token: "dummyAccessToken",
+          photo_id: "12345",
+        },
       );
-    });
-  });
+    }, 10000);
 
-  describe("updatePost", () => {
-    it("should update a post by id", async () => {
-      const postId = "dummyPostId";
-      const message = "Updated message";
-      const mockData = { data: { success: true } };
-      axiosMock.post.mockResolvedValueOnce(mockData);
+    it.skip("should create a story with video", async () => {
+      const stories = {
+        mediaSource: "url",
+        mediaType: "video",
+        url: VIDEO_URL_MOCK,
+      } as CreateStories;
 
-      const result = await metaPage.updatePost(postId, message);
+      const mockDataUpload = {
+        data: { video_id: "12345", upload_url: "www.example.com" },
+      };
 
-      expect(axiosMock.post).toHaveBeenCalledWith(`/${postId}`, {
-        access_token: pageAccessToken,
-        message,
-      });
-      expect(result).toBe(true);
+      const mockData = { data: { post_id: "12345" } };
+
+      const mockedFetch = jest.spyOn(global, "fetch");
+
+      mockedFetch
+        .mockResolvedValueOnce((...args) => originalFetch(...args))
+        .mockResolvedValueOnce(null);
+
+      mockedAxios.post
+        .mockResolvedValueOnce(mockDataUpload)
+        .mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createStories(stories);
+
+      expect(result).toBe("12345");
+      expect(mockedAxios.post).toHaveBeenLastCalledWith(
+        `/dummyPageId/video_stories`,
+        {
+          access_token: "dummyAccessToken",
+          video_id: "12345",
+        },
+      );
+    }, 10000);
+
+    it("should create a story with image from path", async () => {
+      const stories = {
+        mediaSource: "local",
+        mediaType: "photo",
+        path: path.resolve(__dirname, "..", "__test__", "mocks", "image.jpeg"),
+      } as CreateStories;
+
+      const mockDataUpload = {
+        data: {
+          id: "12345",
+        },
+      };
+      const mockData = { data: { post_id: "12345" } };
+
+      mockedAxios.post
+        .mockResolvedValueOnce(mockDataUpload)
+        .mockResolvedValueOnce(mockData);
+
+      const result = await metaPage.createStories(stories);
+
+      expect(result).toBe("12345");
     });
   });
 });

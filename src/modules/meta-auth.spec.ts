@@ -1,6 +1,6 @@
-import { CreateMetaAuth } from "../interfaces/meta-page";
 import axios from "axios";
 import { MetaAuth } from "./meta-auth";
+import { CreateMetaAuth } from "@/interfaces/meta-auth";
 
 jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -29,15 +29,64 @@ describe("Module MetaAuth", () => {
 
       const accessToken = await MetaAuth.createAccessToken(requestData);
 
-      expect(accessToken).toBe("mocked-access-token");
+      expect(accessToken).toEqual({
+        accessToken: "mocked-access-token",
+        getAccounts: expect.any(Function),
+      });
+
       expect(mockedAxios.post).toHaveBeenCalledWith("/oauth/access_token", {
         client_id: requestData.client_id,
         client_secret: requestData.client_secret,
         code: requestData.code,
         redirect_uri: requestData.redirect_uri,
       });
+
       expect(mockPost).toHaveBeenCalled();
       expect(mockPost).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("getAccounts", () => {
+    it("should make a request to /me/accounts and return the accounts", async () => {
+      const requestData = {
+        fields: ["id", "name"],
+        accessToken: "test-access-token",
+      };
+
+      const mockGetPageAccountsResponse = {
+        data: {
+          data: [
+            {
+              id: "test-page-id",
+              name: "Test Page",
+            },
+          ],
+        },
+      };
+
+      mockedAxios.create.mockReturnValue(mockedAxios);
+      const mockGet = mockedAxios.get.mockResolvedValue(
+        mockGetPageAccountsResponse,
+      );
+
+      const accounts = await MetaAuth.getAccounts(requestData);
+
+      expect(accounts).toEqual([
+        {
+          id: "test-page-id",
+          name: "Test Page",
+        },
+      ]);
+
+      expect(mockedAxios.get).toHaveBeenCalledWith("/me/accounts", {
+        params: {
+          access_token: requestData.accessToken,
+          fields: requestData.fields.join(","),
+        },
+      });
+
+      expect(mockGet).toHaveBeenCalled();
+      expect(mockGet).toHaveBeenCalledTimes(1);
     });
   });
 });
