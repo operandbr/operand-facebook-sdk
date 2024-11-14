@@ -2,6 +2,7 @@ import { AxiosInstance } from "axios";
 import {
   ConstructorMain,
   CreatePost,
+  CreateReels,
   CreateStories,
   IMetaPage,
 } from "../interfaces/meta-page";
@@ -19,9 +20,11 @@ import {
 import { generateAxiosInstance } from "../utils/api";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
-import * as FormData from "form-data";
+import { default as FormData } from "form-data";
 import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
 import { OperandError } from "../error/operand-error";
+import * as ffmpeg from "fluent-ffmpeg";
+import * as path from "node:path";
 
 export class MetaPage implements IMetaPage {
   private readonly pageAccessToken: string;
@@ -38,10 +41,139 @@ export class MetaPage implements IMetaPage {
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
     if (file === "photo") {
-      return ["jpeg", "bmp", "png", "gif", "tiff"].includes(type);
+      return ["jpeg", "bmp", "png", "gif", "tiff", "jpg"].includes(type);
     }
 
     return ["mp4"].includes(type);
+  }
+
+  private verifyClosedGOP(metadata: ffmpeg.FfprobeData): boolean {
+    const videoStream = metadata.streams.find(
+      (s: any) => s.codec_type === "video",
+    );
+    if (!videoStream) return false;
+
+    const keyFrames = videoStream.tags?.key_frame_interval
+      ?.split(",")
+      .map(Number);
+    if (!keyFrames || keyFrames.length < 2) return false;
+
+    const gopIntervals = keyFrames
+      .slice(1)
+      .map((frame, index) => frame - keyFrames[index]);
+
+    const frameRate = eval(videoStream.r_frame_rate); // Exemplo: "30/1" -> 30
+    return gopIntervals.every(
+      (interval) => interval / frameRate >= 2 && interval / frameRate <= 5,
+    );
+  }
+
+  public async verifyVideoSpec(videoBuffer: Buffer): Promise<boolean> {
+    const tempFilePath = path.resolve(
+      __dirname,
+      "..",
+      "temp",
+      `${Date.now()}.mp4`,
+    );
+    await fs.promises.writeFile(tempFilePath, videoBuffer);
+
+    const textResponse = await new Promise<string>((resolve, reject) => {
+      ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
+        if (err) {
+          reject(err);
+        }
+
+        const stream = metadata.streams.find((s) => s.width && s.height);
+
+        const width = stream?.width;
+        const height = stream?.height;
+        const fpsString = stream?.avg_frame_rate;
+        const fps = fpsString ? eval(fpsString) : 0;
+        const ratio = width / height;
+
+        const validResolution =
+          width && height && width >= 540 && height >= 960;
+
+        if (!validResolution) {
+          resolve(
+            `Invalid resolution. The video must have at least 540x960. The current resolution is ${width}x${height}.`,
+          );
+        }
+
+        const validFps = fps && fps >= 24 && fps <= 60;
+
+        if (!validFps) {
+          resolve(
+            `Invalid fps. The video must have between 24 and 60 fps. The current fps is ${fps}.`,
+          );
+        }
+
+        const validRatio = ratio <= 0.5625;
+
+        if (!validRatio) {
+          resolve(
+            `Invalid ratio. The video must have a ratio of 0.56 or less. The current ratio is ${ratio}.`,
+          );
+        }
+
+        const videoStream = metadata.streams.find(
+          (s) => s.codec_type === "video",
+        );
+        const audioStream = metadata.streams.find(
+          (s) => s.codec_type === "audio",
+        );
+
+        const videoChecks = {
+          chromaSubsampling: videoStream?.pix_fmt === "yuv420p",
+          closedGOP: this.verifyClosedGOP(metadata),
+          compression: ["h264", "hevc", "vp9", "av1"].includes(
+            videoStream?.codec_name ?? "",
+          ),
+          fixedFrameRate:
+            videoStream?.avg_frame_rate === videoStream?.r_frame_rate,
+          progressive: videoStream?.field_order === "progressive",
+        };
+
+        const audioChecks = {
+          bitrate: parseInt(audioStream?.bit_rate ?? "0") >= 128000,
+          channels: audioStream?.channels === 2,
+          codec: audioStream?.codec_name === "aac",
+          sampleRate: audioStream?.sample_rate === 48000,
+        };
+
+        if (
+          !(
+            Object.values(videoChecks).every(Boolean) &&
+            Object.values(audioChecks).every(Boolean)
+          )
+        ) {
+          resolve(
+            "The video does not meet the requirements. The video must have the following characteristics: \n" +
+              "Video: \n" +
+              "- Chroma subsampling: yuv420p \n" +
+              "- Closed GOP \n" +
+              "- Compression: h264, hevc, vp9 or av1 \n" +
+              "- Fixed frame rate \n" +
+              "- Progressive \n" +
+              "Audio: \n" +
+              "- Bitrate: 128kbps or more \n" +
+              "- Channels: 2 \n" +
+              "- Codec: aac \n" +
+              "- Sample rate: 48000",
+          );
+        }
+
+        resolve("ok");
+      });
+    });
+
+    fs.promises.unlink(tempFilePath);
+
+    if (textResponse !== "ok") {
+      throw new OperandError(textResponse);
+    }
+
+    return true;
   }
 
   private async verifyPhotoSize(
@@ -104,6 +236,10 @@ export class MetaPage implements IMetaPage {
       throw new OperandError("Impossible to get the file type of file.");
     }
 
+    console.log({
+      fileType,
+    });
+
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
       throw new OperandError(
         "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
@@ -136,11 +272,29 @@ export class MetaPage implements IMetaPage {
 
   private async saveVideoInMetaStorageMomentaryByUrl(
     video: string,
+    to: "stories" | "reels",
   ): Promise<string> {
+    const response = await fetch(video);
+    const arrayBuffer = await response.arrayBuffer();
+    const fileType = await FileType.fromBuffer(arrayBuffer);
+
+    if (!fileType) {
+      throw new OperandError("Impossible to get the file type of file.");
+    }
+
+    if (!this.fileTypesPermitted("video", fileType.ext)) {
+      throw new OperandError(
+        "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+      );
+    }
+
+    // IN FUTURE, UNCOMMENT THIS LINE
+    // await this.verifyVideoSpec(Buffer.from(arrayBuffer));
+
     const {
       data: { upload_url, video_id },
     } = await this.api.post<CreateStartVideoUploadResponse>(
-      `${this.pageId}/video_stories`,
+      `${this.pageId}/${to === "stories" ? "video_stories" : "video_reels"}`,
       {
         upload_phase: "start",
         access_token: this.pageAccessToken,
@@ -250,10 +404,6 @@ export class MetaPage implements IMetaPage {
         );
       }
 
-      if (!(await this.verifyPhotoSize(Buffer.from(arrayBuffer), true))) {
-        throw new OperandError("The video must be less or equal to 4MB.");
-      }
-
       const formData = new FormData();
       formData.append("description", message);
       formData.append("file_url", video.value);
@@ -333,16 +483,6 @@ export class MetaPage implements IMetaPage {
     ).data.success;
   }
 
-  public async createStories(story: CreateStories): Promise<string> {
-    if (story.mediaType === "photo") {
-      return await this.createPhotoStory(story);
-    } else if (story.mediaType === "video") {
-      return await this.createVideoStory(story);
-    } else {
-      throw new Error("Unsupported media type.");
-    }
-  }
-
   private async createPhotoStory(story: CreateStories): Promise<string> {
     const photoId =
       story.mediaSource === "url"
@@ -363,7 +503,7 @@ export class MetaPage implements IMetaPage {
   private async createVideoStory(story: CreateStories): Promise<string> {
     const videoId =
       story.mediaSource === "url"
-        ? await this.saveVideoInMetaStorageMomentaryByUrl(story.url)
+        ? await this.saveVideoInMetaStorageMomentaryByUrl(story.url, "stories")
         : "";
 
     const {
@@ -374,6 +514,42 @@ export class MetaPage implements IMetaPage {
         upload_phase: "finish",
         video_id: videoId,
         access_token: this.pageAccessToken,
+      },
+    );
+
+    return post_id;
+  }
+
+  public async createStories(story: CreateStories): Promise<string> {
+    if (story.mediaType === "photo") {
+      return this.createPhotoStory(story);
+    } else if (story.mediaType === "video") {
+      return this.createVideoStory(story);
+    } else {
+      throw new Error("Unsupported media type.");
+    }
+  }
+
+  public async createReels(story: CreateReels): Promise<string> {
+    const videoId =
+      story.mediaSource === "url"
+        ? await this.saveVideoInMetaStorageMomentaryByUrl(story.url, "reels")
+        : "";
+
+    const {
+      data: { post_id },
+    } = await this.api.post<CreateFinishVideoUploadResponse>(
+      `${this.pageId}/video_reels`,
+      {},
+      {
+        params: {
+          video_id: videoId,
+          upload_phase: "finish",
+          video_state: "PUBLISHED",
+          description: story.description,
+          title: story.title,
+          access_token: this.pageAccessToken,
+        },
       },
     );
 

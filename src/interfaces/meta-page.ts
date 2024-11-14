@@ -40,6 +40,22 @@ type CreateStoriesUrl = {
 
 export type CreateStories = CreateStoriesPath | CreateStoriesUrl;
 
+type CreateReelsPath = {
+  mediaSource: "local";
+  path: string;
+  title?: string;
+  description?: string;
+};
+
+type CreateReelsUrl = {
+  mediaSource: "url";
+  url: string;
+  title?: string;
+  description?: string;
+};
+
+export type CreateReels = CreateReelsPath | CreateReelsUrl;
+
 export interface IMetaPage {
   getAllPosts(): Promise<PagePost[]>;
   getPostUrlById(postId: string): string;
