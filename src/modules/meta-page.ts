@@ -530,10 +530,10 @@ export class MetaPage implements IMetaPage {
     }
   }
 
-  public async createReels(story: CreateReels): Promise<string> {
+  public async createReels(reel: CreateReels): Promise<string> {
     const videoId =
-      story.mediaSource === "url"
-        ? await this.saveVideoInMetaStorageMomentaryByUrl(story.url, "reels")
+      reel.mediaSource === "url"
+        ? await this.saveVideoInMetaStorageMomentaryByUrl(reel.url, "reels")
         : "";
 
     const {
@@ -546,8 +546,8 @@ export class MetaPage implements IMetaPage {
           video_id: videoId,
           upload_phase: "finish",
           video_state: "PUBLISHED",
-          description: story.description,
-          title: story.title,
+          description: reel.description,
+          title: reel.title,
           access_token: this.pageAccessToken,
         },
       },
