@@ -116,6 +116,11 @@ Handles operations for managing Meta pages, including posting, updating, and del
   - **Parameters**:
     - `story`: Story configuration including media type and source.
   - **Returns**: The ID of the created story.
+- `createReels(reel: CreateReels):  Promise<string>`
+  - **Description**: Creates a reels for the page, only video.
+  - **Parameters**:
+    - `reel`: Reel configuration including media mediaSource to video.
+  - **Returns**: The ID of the created reel.
 
 ##### Private Methods
 
