@@ -313,53 +313,13 @@ export interface CreateFinishVideoUploadResponse {
 #### `Main`
 
 ```typescript
-import { PagePost } from "./meta";
-
-export type ApiVersion = "v17.0" | "v18.0" | "v19.0" | "v20.0" | "v21.0";
+import { ApiVersion } from "./meta-auth";
+import { PagePost } from "./meta-response";
 
 export type ConstructorMain = {
   pageId: string;
   pageAccessToken: string;
   apiVersion: ApiVersion;
-};
-
-export type CreateMetaAuth = {
-  client_id: string;
-  client_secret: string;
-  redirect_uri?: string;
-  apiVersion: ApiVersion;
-  code: string;
-};
-
-export type GetAccounts = {
-  fields: Array<
-    | "id"
-    | "name"
-    | "about"
-    | "category"
-    | "category_list"
-    | "location"
-    | "fan_count"
-    | "access_token"
-    | "tasks"
-    | "picture"
-    | "cover"
-    | "photos"
-    | "videos"
-    | "engagement"
-    | "is_published"
-    | "is_verified"
-    | "verification_status"
-    | "website"
-    | "emails"
-    | "phone"
-    | "instagram_business_account"
-    | "hours"
-    | "created_time"
-    | "bio"
-    | "link"
-    | "business"
-  >;
 };
 
 type PhotoMediaItem = {
@@ -372,33 +332,14 @@ type VideoMediaItem = {
   value: string;
 };
 
-type CreatePostWithPhotos = {
-  mediaType: "photo";
-  photos: PhotoMediaItem[];
+export type CreatePost = {
+  mediaType?: "photo" | "video";
   message?: string;
   publishNow: boolean;
   datePublish?: Date;
+  photos?: PhotoMediaItem[];
+  video?: VideoMediaItem;
 };
-
-type CreatePostWithVideos = {
-  mediaType: "video";
-  video: VideoMediaItem;
-  message?: string;
-  publishNow: boolean;
-  datePublish?: Date;
-};
-
-type CreatePostWithoutMedia = {
-  mediaType?: "none";
-  message: string;
-  publishNow: boolean;
-  datePublish?: Date;
-};
-
-export type CreatePost =
-  | CreatePostWithVideos
-  | CreatePostWithPhotos
-  | CreatePostWithoutMedia;
 
 type CreateStoriesPath = {
   mediaSource: "local";
@@ -414,6 +355,22 @@ type CreateStoriesUrl = {
 
 export type CreateStories = CreateStoriesPath | CreateStoriesUrl;
 
+type CreateReelsPath = {
+  mediaSource: "local";
+  path: string;
+  title?: string;
+  description?: string;
+};
+
+type CreateReelsUrl = {
+  mediaSource: "url";
+  url: string;
+  title?: string;
+  description?: string;
+};
+
+export type CreateReels = CreateReelsPath | CreateReelsUrl;
+
 export interface IMetaPage {
   getAllPosts(): Promise<PagePost[]>;
   getPostUrlById(postId: string): string;
@@ -421,7 +378,6 @@ export interface IMetaPage {
   updatePost(postId: string, message: string): Promise<boolean>;
   deletePost(postId: string): Promise<boolean>;
   createStories(data: CreateStories): Promise<string>;
-  getAccounts(data: GetAccounts): Promise<GetAccounts>;
 }
 
 ```
