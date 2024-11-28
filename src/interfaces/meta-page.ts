@@ -7,12 +7,12 @@ export type ConstructorMain = {
   apiVersion: ApiVersion;
 };
 
-type PhotoMediaItem = {
+export type PhotoMediaItem = {
   source: "url" | "path";
   value: string;
 };
 
-type VideoMediaItem = {
+export type VideoMediaItem = {
   source: "url" | "path";
   value: string;
 };

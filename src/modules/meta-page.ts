@@ -5,6 +5,7 @@ import {
   CreateReels,
   CreateStories,
   IMetaPage,
+  VideoMediaItem,
 } from "../interfaces/meta-page";
 import {
   DeletePagePostResponse,
@@ -20,7 +21,7 @@ import {
 import { generateAxiosInstance } from "../utils/api";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
-import { default as FormData } from "form-data";
+import * as FormData from "form-data";
 import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
 import { OperandError } from "../error/operand-error";
 import * as ffmpeg from "fluent-ffmpeg";
@@ -236,10 +237,6 @@ export class MetaPage implements IMetaPage {
       throw new OperandError("Impossible to get the file type of file.");
     }
 
-    console.log({
-      fileType,
-    });
-
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
       throw new OperandError(
         "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
@@ -360,7 +357,7 @@ export class MetaPage implements IMetaPage {
     return newPost.post_id || newPost.id;
   }
 
-  private async createMediaPost(
+  private async createPhotosPost(
     message: string,
     mediaIds: string[],
     publishNow: boolean,
@@ -383,54 +380,60 @@ export class MetaPage implements IMetaPage {
     return newPost.post_id || newPost.id;
   }
 
-  private async uploadVideo(
-    video: { source: string; value: string },
+  private async createVideoPost(
+    video: VideoMediaItem,
     message: string,
     publishNow: boolean,
     datePublish?: Date,
   ): Promise<string> {
+    let arrayBuffer: ArrayBuffer;
+
     if (video.source === "url") {
       const response = await fetch(video.value);
-      const arrayBuffer = await response.arrayBuffer();
-      const fileType = await FileType.fromBuffer(arrayBuffer);
-
-      if (!fileType) {
-        throw new OperandError("Impossible to get the file type of file.");
-      }
-
-      if (!this.fileTypesPermitted("video", fileType.ext)) {
-        throw new OperandError(
-          "This file type is not permitted. File types permitted: mp4.",
-        );
-      }
-
-      const formData = new FormData();
-      formData.append("description", message);
-      formData.append("file_url", video.value);
-      formData.append("access_token", this.pageAccessToken);
-
-      if (!publishNow) {
-        formData.append("published", "false");
-        formData.append(
-          "scheduled_publish_time",
-          Math.floor(getTime(datePublish) / 1000),
-        );
-      }
-
-      const { data } = await this.apiVideo.post<SaveMediaStorageResponse>(
-        `/${this.pageId}/videos`,
-        formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-          },
-        },
-      );
-
-      return data.id;
+      arrayBuffer = await response.arrayBuffer();
+    } else {
+      arrayBuffer = await fs.promises.readFile(video.value);
     }
 
-    throw new OperandError("Invalid video source.");
+    const fileType = await FileType.fromBuffer(arrayBuffer);
+
+    if (!fileType) {
+      throw new OperandError("Impossible to get the file type of file.");
+    }
+
+    if (!this.fileTypesPermitted("video", fileType.ext)) {
+      throw new OperandError(
+        "This file type is not permitted. File types permitted: mp4.",
+      );
+    }
+
+    const formData = new FormData();
+    formData.append("description", message);
+    formData.append(
+      video.source === "url" ? "file_url" : "source",
+      video.source === "url" ? video.value : fs.createReadStream(video.value),
+    );
+    formData.append("access_token", this.pageAccessToken);
+
+    if (!publishNow) {
+      formData.append("published", "false");
+      formData.append(
+        "scheduled_publish_time",
+        Math.floor(getTime(datePublish) / 1000),
+      );
+    }
+
+    const { data } = await this.apiVideo.post<SaveMediaStorageResponse>(
+      `/${this.pageId}/videos`,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+        },
+      },
+    );
+
+    return data.id;
   }
 
   public async createPost(post: CreatePost): Promise<string> {
@@ -454,11 +457,11 @@ export class MetaPage implements IMetaPage {
 
     if (mediaType === "photo") {
       const mediaIds = await this.uploadPhotos(post.photos);
-      return this.createMediaPost(message, mediaIds, publishNow, datePublish);
+      return this.createPhotosPost(message, mediaIds, publishNow, datePublish);
     }
 
     if (mediaType === "video") {
-      return this.uploadVideo(post.video, message, publishNow, datePublish);
+      return this.createVideoPost(post.video, message, publishNow, datePublish);
     }
 
     throw new OperandError("Invalid parameters.");
