@@ -1,0 +1,323 @@
+import {
+  ConstructorIng,
+  CreatePost,
+  IMetaIng,
+  PhotoMediaItem,
+  VideoMediaItem,
+} from "../interfaces/meta-ing";
+import { Meta } from "./meta";
+import { OperandError } from "../error/operand-error";
+import {
+  GetStatusMediaContainerDownloadResponse,
+  PostMediaContainerReelsResponse,
+  SaveMediaStorageResponse,
+} from "../interfaces/meta-response";
+import * as FileType from "file-type";
+import * as fs from "node:fs";
+
+export class MetaIng extends Meta implements IMetaIng {
+  private readonly ingId: string;
+  constructor({ apiVersion, ingId, pageAccessToken }: ConstructorIng) {
+    super({ apiVersion, pageAccessToken });
+    this.ingId = ingId;
+  }
+
+  private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
+    return file === "photo"
+      ? ["jpeg", "jpg"].includes(type)
+      : ["mp4"].includes(type);
+  }
+
+  private async verifyPhotoSize(
+    value: string | Buffer,
+    isBuffer: boolean,
+  ): Promise<boolean> {
+    if (isBuffer) {
+      return (value as Buffer).length / 1024 / 1024 <= 8;
+    }
+
+    const status = await fs.promises.stat(value as string);
+    return status.size / 1024 / 1024 <= 4;
+  }
+
+  private verifyStatusCodeContainerVideoDownload = async (id: string) => {
+    let statusCodeContainer = 1;
+
+    while (statusCodeContainer === 1) {
+      const status = (
+        await this.api.get<GetStatusMediaContainerDownloadResponse>(`/${id}`, {
+          params: {
+            access_token: this.pageAccessToken,
+            fields: "status_code",
+          },
+        })
+      ).data.status_code;
+
+      if (status === "IN_PROGRESS") {
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        continue;
+      }
+
+      if (status === "ERROR") {
+        throw new OperandError("Error on upload media");
+      }
+
+      if (status === "FINISHED") {
+        statusCodeContainer = 0;
+      }
+    }
+  };
+
+  private verifyVideoSize = async (
+    value: string | Buffer,
+    isBuffer: boolean,
+  ): Promise<boolean> => {
+    if (isBuffer) {
+      return (value as Buffer).length / 1024 / 1024 / 1024 <= 1;
+    }
+
+    const status = await fs.promises.stat(value as string);
+    return status.size / 1024 / 1024 / 1024 <= 1;
+  };
+
+  private savePhotoInMetaContainerByUrl = async (
+    url: string,
+    isCarouselItem?: boolean,
+  ): Promise<string> => {
+    isCarouselItem = isCarouselItem === undefined ? true : isCarouselItem;
+
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+
+    const fileType = await FileType.fromBuffer(arrayBuffer);
+
+    if (!fileType) {
+      throw new OperandError("Impossible to get the file type of file.");
+    }
+
+    if (!this.fileTypesPermitted("photo", fileType.ext)) {
+      throw new OperandError(
+        "This file type is not permitted. File types permitted: jpeg.",
+      );
+    }
+
+    if (!(await this.verifyPhotoSize(Buffer.from(arrayBuffer), true))) {
+      throw new OperandError("The photo must be less or equal to 8MB.");
+    }
+
+    const containerId = (
+      await this.api.post<SaveMediaStorageResponse>(
+        `${this.ingId}/media`,
+        undefined,
+        {
+          params: {
+            image_url: url,
+            ...(isCarouselItem ? { is_carousel_item: true } : {}),
+            access_token: this.pageAccessToken,
+          },
+        },
+      )
+    ).data.id;
+
+    await this.verifyStatusCodeContainerVideoDownload(containerId);
+
+    return containerId;
+  };
+
+  private saveVideoInMetaContainerByUrl = async (
+    url: string,
+    isCarouselItem?: boolean,
+  ): Promise<string> => {
+    isCarouselItem = isCarouselItem === undefined ? true : isCarouselItem;
+
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+
+    const fileType = await FileType.fromBuffer(arrayBuffer);
+
+    if (!fileType) {
+      throw new OperandError("Impossible to get the file type of file.");
+    }
+
+    if (!["mp4", "mov"].includes(fileType.ext)) {
+      throw new OperandError(
+        "Invalid file type. File types permitted: mp4, mov",
+      );
+    }
+
+    if (!(await this.verifyVideoSize(Buffer.from(arrayBuffer), true))) {
+      throw new OperandError("The video must be less or equal to 1GB.");
+    }
+
+    const containerId = (
+      await this.api.post<SaveMediaStorageResponse>(
+        `${this.ingId}/media`,
+        undefined,
+        {
+          params: {
+            video_url: url,
+            access_token: this.pageAccessToken,
+            ...(isCarouselItem ? { is_carousel_item: true } : {}),
+            media_type: "REELS",
+          },
+        },
+      )
+    ).data.id;
+
+    await this.verifyStatusCodeContainerVideoDownload(containerId);
+
+    return containerId;
+  };
+
+  private saveVideoInMetaContainerByPath = async (
+    path: string,
+    isCarouselItem?: boolean,
+  ): Promise<string> => {
+    isCarouselItem = isCarouselItem === undefined ? true : isCarouselItem;
+
+    const arrayBuffer = await fs.promises.readFile(path);
+
+    const fileType = await FileType.fromBuffer(arrayBuffer);
+
+    if (!fileType) {
+      throw new OperandError("Impossible to get the file type of file.");
+    }
+
+    if (!["mp4", "mov"].includes(fileType.ext)) {
+      throw new OperandError(
+        "Invalid file type. File types permitted: mp4, mov",
+      );
+    }
+
+    if (!(await this.verifyVideoSize(path, false))) {
+      throw new OperandError("The video must be less or equal to 1GB.");
+    }
+
+    const {
+      data: { id, uri },
+    } = await this.api.post<PostMediaContainerReelsResponse>(
+      `${this.ingId}/media`,
+      undefined,
+      {
+        params: {
+          media_type: "REELS",
+          ...(isCarouselItem ? { is_carousel_item: true } : {}),
+          upload_type: "resumable",
+          access_token: this.pageAccessToken,
+        },
+      },
+    );
+
+    const sessionStart = await fetch(uri, {
+      method: "POST",
+      headers: {
+        Authorization: `OAuth ${this.pageAccessToken}`,
+        offset: "0",
+        file_size: String(arrayBuffer.byteLength),
+      },
+      body: arrayBuffer,
+    });
+
+    if (sessionStart.status !== 200) {
+      throw new OperandError("Error on upload video");
+    }
+
+    await this.verifyStatusCodeContainerVideoDownload(id);
+
+    return id;
+  };
+
+  private uploadPhotos = async (
+    photos: PhotoMediaItem[],
+  ): Promise<string[]> => {
+    return Promise.all(
+      photos.map(async (photo) => {
+        return this.savePhotoInMetaContainerByUrl(photo.value);
+      }),
+    );
+  };
+
+  private uploadVideos = async (
+    videos: VideoMediaItem[],
+  ): Promise<string[]> => {
+    return Promise.all(
+      videos.map(async (video) => {
+        return video.source === "url"
+          ? this.saveVideoInMetaContainerByUrl(video.value)
+          : this.saveVideoInMetaContainerByPath(video.value);
+      }),
+    );
+  };
+
+  public async createPost(post: CreatePost): Promise<string> {
+    const { caption, midias } = post;
+
+    if (midias.length === 0) {
+      throw new OperandError("Midias is required");
+    }
+
+    if (midias.length > 10) {
+      throw new OperandError("Midias must be less than or equal to 10");
+    }
+
+    if (midias.length === 1) {
+      const containerId =
+        midias[0].mediaType === "photo"
+          ? await this.savePhotoInMetaContainerByUrl(midias[0].value, false)
+          : midias[0].source === "url"
+            ? await this.saveVideoInMetaContainerByUrl(midias[0].value, false)
+            : await this.saveVideoInMetaContainerByPath(midias[0].value, false);
+
+      await this.verifyStatusCodeContainerVideoDownload(containerId);
+
+      return (
+        await this.api.post<SaveMediaStorageResponse>(
+          `/${this.ingId}/media_publish`,
+          undefined,
+          {
+            params: {
+              creation_id: containerId,
+              access_token: this.pageAccessToken,
+            },
+          },
+        )
+      ).data.id;
+    }
+
+    const photoIds = await this.uploadPhotos(
+      midias.filter((m) => m.mediaType === "photo"),
+    );
+
+    const videoIds = await this.uploadVideos(
+      midias.filter((m) => m.mediaType === "video"),
+    );
+
+    const media = [...photoIds, ...videoIds];
+
+    const creationId = (
+      await this.api.post<SaveMediaStorageResponse>(
+        `${this.ingId}/media`,
+        undefined,
+        {
+          params: {
+            access_token: this.pageAccessToken,
+            caption,
+            children: media.join(","),
+            media_type: "CAROUSEL",
+          },
+        },
+      )
+    ).data.id;
+
+    await this.verifyStatusCodeContainerVideoDownload(creationId);
+
+    return (
+      await this.api.post(`${this.ingId}/media_publish`, undefined, {
+        params: {
+          creation_id: creationId,
+          access_token: this.pageAccessToken,
+        },
+      })
+    ).data.id;
+  }
+}
