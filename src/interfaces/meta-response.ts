@@ -140,3 +140,13 @@ export interface CreateFinishVideoUploadResponse {
   message: string;
   post_id: string;
 }
+
+export interface GetStatusMediaContainerDownloadResponse {
+  status_code: "FINISHED" | "ERROR" | "EXPIRED" | "IN_PROGRESS" | "PUBLISHED";
+  id: string;
+}
+
+export interface PostMediaContainerReelsResponse {
+  id: string;
+  uri: string;
+}
