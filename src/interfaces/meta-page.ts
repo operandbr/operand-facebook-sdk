@@ -1,11 +1,5 @@
-import { ApiVersion } from "./meta-auth";
+import { ConstructorMain } from "./meta";
 import { PagePost } from "./meta-response";
-
-export type ConstructorMain = {
-  pageId: string;
-  pageAccessToken: string;
-  apiVersion: ApiVersion;
-};
 
 export type PhotoMediaItem = {
   source: "url" | "path";
@@ -56,6 +50,10 @@ type CreateReelsUrl = {
 
 export type CreateReels = CreateReelsPath | CreateReelsUrl;
 
+export interface ConstructorPage extends ConstructorMain {
+  pageId: string;
+}
+
 export interface IMetaPage {
   getAllPosts(): Promise<PagePost[]>;
   getPostUrlById(postId: string): string;
@@ -63,4 +61,5 @@ export interface IMetaPage {
   updatePost(postId: string, message: string): Promise<boolean>;
   deletePost(postId: string): Promise<boolean>;
   createStories(data: CreateStories): Promise<string>;
+  createReels(data: CreateReels): Promise<string>;
 }

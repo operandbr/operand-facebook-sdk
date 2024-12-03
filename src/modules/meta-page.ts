@@ -1,6 +1,5 @@
-import { AxiosInstance } from "axios";
 import {
-  ConstructorMain,
+  ConstructorPage,
   CreatePost,
   CreateReels,
   CreateStories,
@@ -18,7 +17,6 @@ import {
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
 } from "../interfaces/meta-response";
-import { generateAxiosInstance } from "../utils/api";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 import * as FormData from "form-data";
@@ -26,18 +24,14 @@ import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
 import { OperandError } from "../error/operand-error";
 import * as ffmpeg from "fluent-ffmpeg";
 import * as path from "node:path";
+import { Meta } from "./meta";
 
-export class MetaPage implements IMetaPage {
-  private readonly pageAccessToken: string;
+export class MetaPage extends Meta implements IMetaPage {
   private readonly pageId: string;
-  private readonly api: AxiosInstance;
-  private readonly apiVideo: AxiosInstance;
 
-  constructor({ pageAccessToken, pageId, apiVersion }: ConstructorMain) {
+  constructor({ pageAccessToken, pageId, apiVersion }: ConstructorPage) {
+    super({ pageAccessToken, apiVersion });
     this.pageId = pageId;
-    this.pageAccessToken = pageAccessToken;
-    this.api = generateAxiosInstance(apiVersion);
-    this.apiVideo = generateAxiosInstance(apiVersion, true);
   }
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
