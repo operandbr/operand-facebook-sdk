@@ -21,13 +21,13 @@ export type CreatePost = {
 };
 
 type CreateStoriesPath = {
-  mediaSource: "local";
+  source: "path";
   mediaType: "photo" | "video";
   path: string;
 };
 
 type CreateStoriesUrl = {
-  mediaSource: "url";
+  source: "url";
   mediaType: "photo" | "video";
   url: string;
 };
@@ -35,14 +35,14 @@ type CreateStoriesUrl = {
 export type CreateStories = CreateStoriesPath | CreateStoriesUrl;
 
 type CreateReelsPath = {
-  mediaSource: "local";
+  source: "path";
   path: string;
   title?: string;
   description?: string;
 };
 
 type CreateReelsUrl = {
-  mediaSource: "url";
+  source: "url";
   url: string;
   title?: string;
   description?: string;
