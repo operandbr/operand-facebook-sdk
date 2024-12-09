@@ -301,7 +301,7 @@ describe("MetaPage", () => {
   describe("createStories", () => {
     it("should create a story with image", async () => {
       const stories = {
-        mediaSource: "url",
+        source: "url",
         mediaType: "photo",
         url: PHOTO_URL_MOCK,
       } as CreateStories;
@@ -327,7 +327,7 @@ describe("MetaPage", () => {
 
     it.skip("should create a story with video", async () => {
       const stories = {
-        mediaSource: "url",
+        source: "url",
         mediaType: "video",
         url: VIDEO_URL_MOCK,
       } as CreateStories;
@@ -362,7 +362,7 @@ describe("MetaPage", () => {
 
     it("should create a story with image from path", async () => {
       const stories = {
-        mediaSource: "local",
+        source: "path",
         mediaType: "photo",
         path: path.resolve(__dirname, "..", "__test__", "mocks", "image.jpeg"),
       } as CreateStories;
