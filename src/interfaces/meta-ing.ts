@@ -16,13 +16,16 @@ export type VideoMediaItem = {
   value: string;
 };
 
-export type Midias = PhotoMediaItem | VideoMediaItem;
+export type Medias = PhotoMediaItem | VideoMediaItem;
 
 export type CreatePost = {
   caption?: string;
-  midias: Midias[];
+  medias: Medias[];
 };
+
+export type CreateStories = Medias;
 
 export interface IMetaIng {
   createPost(data: CreatePost): Promise<string>;
+  createStories(data: CreateStories): Promise<string>;
 }
