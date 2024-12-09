@@ -1,6 +1,7 @@
 import {
   ConstructorIng,
   CreatePost,
+  CreateStories,
   IMetaIng,
   PhotoMediaItem,
   VideoMediaItem,
@@ -82,10 +83,9 @@ export class MetaIng extends Meta implements IMetaIng {
 
   private savePhotoInMetaContainerByUrl = async (
     url: string,
+    to: "REELS" | "STORIES" | "FEED",
     isCarouselItem?: boolean,
   ): Promise<string> => {
-    isCarouselItem = isCarouselItem === undefined ? true : isCarouselItem;
-
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
 
@@ -113,6 +113,8 @@ export class MetaIng extends Meta implements IMetaIng {
           params: {
             image_url: url,
             ...(isCarouselItem ? { is_carousel_item: true } : {}),
+            ...(to === "REELS" ? { media_type: "REELS" } : {}),
+            ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
             access_token: this.pageAccessToken,
           },
         },
@@ -126,10 +128,9 @@ export class MetaIng extends Meta implements IMetaIng {
 
   private saveVideoInMetaContainerByUrl = async (
     url: string,
+    to: "REELS" | "STORIES" | "FEED",
     isCarouselItem?: boolean,
   ): Promise<string> => {
-    isCarouselItem = isCarouselItem === undefined ? true : isCarouselItem;
-
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
 
@@ -158,7 +159,8 @@ export class MetaIng extends Meta implements IMetaIng {
             video_url: url,
             access_token: this.pageAccessToken,
             ...(isCarouselItem ? { is_carousel_item: true } : {}),
-            media_type: "REELS",
+            ...(to === "REELS" ? { media_type: "REELS" } : {}),
+            ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
           },
         },
       )
@@ -171,10 +173,9 @@ export class MetaIng extends Meta implements IMetaIng {
 
   private saveVideoInMetaContainerByPath = async (
     path: string,
+    to: "REELS" | "STORIES" | "FEED",
     isCarouselItem?: boolean,
   ): Promise<string> => {
-    isCarouselItem = isCarouselItem === undefined ? true : isCarouselItem;
-
     const arrayBuffer = await fs.promises.readFile(path);
 
     const fileType = await FileType.fromBuffer(arrayBuffer);
@@ -200,8 +201,9 @@ export class MetaIng extends Meta implements IMetaIng {
       undefined,
       {
         params: {
-          media_type: "REELS",
           ...(isCarouselItem ? { is_carousel_item: true } : {}),
+          ...(to === "REELS" ? { media_type: "REELS" } : {}),
+          ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
           upload_type: "resumable",
           access_token: this.pageAccessToken,
         },
@@ -232,7 +234,7 @@ export class MetaIng extends Meta implements IMetaIng {
   ): Promise<string[]> => {
     return Promise.all(
       photos.map(async (photo) => {
-        return this.savePhotoInMetaContainerByUrl(photo.value);
+        return this.savePhotoInMetaContainerByUrl(photo.value, "FEED", true);
       }),
     );
   };
@@ -243,53 +245,47 @@ export class MetaIng extends Meta implements IMetaIng {
     return Promise.all(
       videos.map(async (video) => {
         return video.source === "url"
-          ? this.saveVideoInMetaContainerByUrl(video.value)
-          : this.saveVideoInMetaContainerByPath(video.value);
+          ? this.saveVideoInMetaContainerByUrl(video.value, "FEED", true)
+          : this.saveVideoInMetaContainerByPath(video.value, "FEED", true);
       }),
     );
   };
 
-  public async createPost(post: CreatePost): Promise<string> {
-    const { caption, midias } = post;
+  private createUniquePost = async (post: CreatePost): Promise<string> => {
+    const { medias } = post;
 
-    if (midias.length === 0) {
-      throw new OperandError("Midias is required");
-    }
+    const containerId =
+      medias[0].mediaType === "photo"
+        ? await this.savePhotoInMetaContainerByUrl(medias[0].value, "FEED")
+        : medias[0].source === "url"
+          ? await this.saveVideoInMetaContainerByUrl(medias[0].value, "FEED")
+          : await this.saveVideoInMetaContainerByPath(medias[0].value, "FEED");
 
-    if (midias.length > 10) {
-      throw new OperandError("Midias must be less than or equal to 10");
-    }
+    await this.verifyStatusCodeContainerVideoDownload(containerId);
 
-    if (midias.length === 1) {
-      const containerId =
-        midias[0].mediaType === "photo"
-          ? await this.savePhotoInMetaContainerByUrl(midias[0].value, false)
-          : midias[0].source === "url"
-            ? await this.saveVideoInMetaContainerByUrl(midias[0].value, false)
-            : await this.saveVideoInMetaContainerByPath(midias[0].value, false);
-
-      await this.verifyStatusCodeContainerVideoDownload(containerId);
-
-      return (
-        await this.api.post<SaveMediaStorageResponse>(
-          `/${this.ingId}/media_publish`,
-          undefined,
-          {
-            params: {
-              creation_id: containerId,
-              access_token: this.pageAccessToken,
-            },
+    return (
+      await this.api.post<SaveMediaStorageResponse>(
+        `/${this.ingId}/media_publish`,
+        undefined,
+        {
+          params: {
+            creation_id: containerId,
+            access_token: this.pageAccessToken,
           },
-        )
-      ).data.id;
-    }
+        },
+      )
+    ).data.id;
+  };
+
+  private createCarrouselPost = async (post: CreatePost): Promise<string> => {
+    const { caption, medias } = post;
 
     const photoIds = await this.uploadPhotos(
-      midias.filter((m) => m.mediaType === "photo"),
+      medias.filter((m) => m.mediaType === "photo"),
     );
 
     const videoIds = await this.uploadVideos(
-      midias.filter((m) => m.mediaType === "video"),
+      medias.filter((m) => m.mediaType === "video"),
     );
 
     const media = [...photoIds, ...videoIds];
@@ -319,5 +315,77 @@ export class MetaIng extends Meta implements IMetaIng {
         },
       })
     ).data.id;
+  };
+
+  public async createPost(post: CreatePost): Promise<string> {
+    const { medias } = post;
+
+    if (medias.length === 0) {
+      throw new OperandError("Medias is required");
+    }
+
+    if (medias.length > 10) {
+      throw new OperandError("Medias must be less than or equal to 10");
+    }
+
+    if (medias.length === 1) {
+      return this.createUniquePost(post);
+    }
+
+    return this.createCarrouselPost(post);
+  }
+
+  private async createPhotoStory(photo: PhotoMediaItem): Promise<string> {
+    const photoId = await this.savePhotoInMetaContainerByUrl(
+      photo.value,
+      "STORIES",
+    );
+
+    await this.verifyStatusCodeContainerVideoDownload(photoId);
+
+    return (
+      await this.api.post<SaveMediaStorageResponse>(
+        `${this.ingId}/media_publish`,
+        undefined,
+        {
+          params: {
+            creation_id: photoId,
+            access_token: this.pageAccessToken,
+          },
+        },
+      )
+    ).data.id;
+  }
+
+  private async createVideoStory(video: VideoMediaItem): Promise<string> {
+    const videoId =
+      video.source === "url"
+        ? await this.saveVideoInMetaContainerByUrl(video.value, "STORIES")
+        : await this.saveVideoInMetaContainerByPath(video.value, "STORIES");
+
+    await this.verifyStatusCodeContainerVideoDownload(videoId);
+
+    return (
+      await this.api.post<SaveMediaStorageResponse>(
+        `${this.ingId}/media_publish`,
+        undefined,
+        {
+          params: {
+            creation_id: videoId,
+            access_token: this.pageAccessToken,
+          },
+        },
+      )
+    ).data.id;
+  }
+
+  public async createStories(media: CreateStories): Promise<string> {
+    if (!media) {
+      throw new OperandError("Media is required");
+    }
+
+    if (media.mediaType === "photo") return this.createPhotoStory(media);
+
+    return this.createVideoStory(media);
   }
 }
