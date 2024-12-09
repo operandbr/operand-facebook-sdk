@@ -306,6 +306,50 @@ export class MetaPage extends Meta implements IMetaPage {
     return video_id;
   }
 
+  private async saveVideoInMetaStorageMomentaryByPath(
+    video: string,
+    to: "stories" | "reels",
+  ): Promise<string> {
+    const arrayBuffer = await fs.promises.readFile(video);
+
+    const fileType = await FileType.fromBuffer(arrayBuffer);
+
+    if (!fileType) {
+      throw new OperandError("Impossible to get the file type of file.");
+    }
+
+    if (!this.fileTypesPermitted("video", fileType.ext)) {
+      throw new OperandError(
+        "This file type is not permitted. File types permitted: mp4.",
+      );
+    }
+
+    // IN FUTURE, UNCOMMENT THIS LINE
+    // await this.verifyVideoSpec(await fs.promises.readFile(video));
+
+    const {
+      data: { upload_url, video_id },
+    } = await this.api.post<CreateStartVideoUploadResponse>(
+      `${this.pageId}/${to === "stories" ? "video_stories" : "video_reels"}`,
+      {
+        upload_phase: "start",
+        access_token: this.pageAccessToken,
+      },
+    );
+
+    await fetch(upload_url, {
+      method: "POST",
+      body: arrayBuffer,
+      headers: {
+        Authorization: `OAuth ${this.pageAccessToken}`,
+        offset: "0",
+        file_size: String(arrayBuffer.byteLength),
+      },
+    });
+
+    return video_id;
+  }
+
   public async getAllPosts(): Promise<PagePost[]> {
     return (
       await this.api.get<GetPagePostsResponse>(`/${this.pageId}/feed`, {
@@ -482,7 +526,7 @@ export class MetaPage extends Meta implements IMetaPage {
 
   private async createPhotoStory(story: CreateStories): Promise<string> {
     const photoId =
-      story.mediaSource === "url"
+      story.source === "url"
         ? await this.savePhotoInMetaStorageByUrl(story.url)
         : await this.savePhotoInMetaStorageByPath(story.path);
 
@@ -499,9 +543,12 @@ export class MetaPage extends Meta implements IMetaPage {
 
   private async createVideoStory(story: CreateStories): Promise<string> {
     const videoId =
-      story.mediaSource === "url"
+      story.source === "url"
         ? await this.saveVideoInMetaStorageMomentaryByUrl(story.url, "stories")
-        : "";
+        : await this.saveVideoInMetaStorageMomentaryByPath(
+            story.path,
+            "stories",
+          );
 
     const {
       data: { post_id },
@@ -529,9 +576,9 @@ export class MetaPage extends Meta implements IMetaPage {
 
   public async createReels(reel: CreateReels): Promise<string> {
     const videoId =
-      reel.mediaSource === "url"
+      reel.source === "url"
         ? await this.saveVideoInMetaStorageMomentaryByUrl(reel.url, "reels")
-        : "";
+        : await this.saveVideoInMetaStorageMomentaryByPath(reel.path, "reels");
 
     const {
       data: { post_id },
