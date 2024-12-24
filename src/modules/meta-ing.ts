@@ -9,6 +9,7 @@ import {
 import { Meta } from "./meta";
 import { OperandError } from "../error/operand-error";
 import {
+  GetFollowersCountResponse,
   GetStatusMediaContainerDownloadResponse,
   PostMediaContainerReelsResponse,
   SaveMediaStorageResponse,
@@ -387,5 +388,20 @@ export class MetaIng extends Meta implements IMetaIng {
     if (media.mediaType === "photo") return this.createPhotoStory(media);
 
     return this.createVideoStory(media);
+  }
+
+  public async utils() {
+    return {
+      getFollowersCount: async () => {
+        return (
+          await this.api.get<GetFollowersCountResponse>(`/${this.ingId}`, {
+            params: {
+              fields: "followers_count",
+              access_token: this.pageAccessToken,
+            },
+          })
+        ).data.followers_count;
+      },
+    };
   }
 }

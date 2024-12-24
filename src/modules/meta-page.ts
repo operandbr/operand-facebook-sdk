@@ -16,6 +16,7 @@ import {
   CreatePhotoStoriesResponse,
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
+  GetFollowersCountResponse,
 } from "../interfaces/meta-response";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
@@ -598,5 +599,20 @@ export class MetaPage extends Meta implements IMetaPage {
     );
 
     return post_id;
+  }
+
+  public async utils() {
+    return {
+      getFollowersCount: async () => {
+        return (
+          await this.api.get<GetFollowersCountResponse>(`/${this.pageId}`, {
+            params: {
+              fields: "followers_count",
+              access_token: this.pageAccessToken,
+            },
+          })
+        ).data.followers_count;
+      },
+    };
   }
 }

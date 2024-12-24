@@ -150,3 +150,8 @@ export interface PostMediaContainerReelsResponse {
   id: string;
   uri: string;
 }
+
+export interface GetFollowersCountResponse {
+  followers_count: number;
+  id: string;
+}
