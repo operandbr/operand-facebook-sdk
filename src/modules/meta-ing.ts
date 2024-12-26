@@ -9,7 +9,8 @@ import {
 import { Meta } from "./meta";
 import { OperandError } from "../error/operand-error";
 import {
-  GetFollowersCountResponse,
+  getFollowersCountByDateInterval,
+  GetFollowersCountResponseCurrent,
   GetStatusMediaContainerDownloadResponse,
   PostMediaContainerReelsResponse,
   SaveMediaStorageResponse,
@@ -392,15 +393,38 @@ export class MetaIng extends Meta implements IMetaIng {
 
   public async utils() {
     return {
-      getFollowersCount: async () => {
+      getFollowersCountCurrent: async () => {
         return (
-          await this.api.get<GetFollowersCountResponse>(`/${this.ingId}`, {
-            params: {
-              fields: "followers_count",
-              access_token: this.pageAccessToken,
+          await this.api.get<GetFollowersCountResponseCurrent>(
+            `/${this.ingId}`,
+            {
+              params: {
+                fields: "followers_count",
+                access_token: this.pageAccessToken,
+              },
             },
-          })
+          )
         ).data.followers_count;
+      },
+      getFollowersCountByDateInterval: async (
+        startDate: Date,
+        endDate: Date,
+      ) => {
+        return (
+          await this.api.get<getFollowersCountByDateInterval>(
+            `/${this.ingId}/insights`,
+            {
+              params: {
+                metric: "follows_and_unfollows",
+                period: "day",
+                metric_type: "total_value",
+                since: startDate.getTime() / 1000,
+                until: endDate.getTime() / 1000,
+                access_token: this.pageAccessToken,
+              },
+            },
+          )
+        ).data.data.values;
       },
     };
   }

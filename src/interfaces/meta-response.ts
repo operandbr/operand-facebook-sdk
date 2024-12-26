@@ -151,7 +151,24 @@ export interface PostMediaContainerReelsResponse {
   uri: string;
 }
 
-export interface GetFollowersCountResponse {
+export interface GetFollowersCountResponseCurrent {
   followers_count: number;
   id: string;
+}
+
+export interface getFollowersCountByDateInterval {
+  data: {
+    name: string;
+    period: string;
+    values: {
+      value: number;
+      end_time: string;
+    }[];
+    title: string;
+    description: string;
+    id: string;
+  };
+  paging: {
+    previous: string;
+  };
 }

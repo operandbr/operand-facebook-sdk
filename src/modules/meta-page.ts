@@ -16,7 +16,8 @@ import {
   CreatePhotoStoriesResponse,
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
-  GetFollowersCountResponse,
+  GetFollowersCountResponseCurrent,
+  getFollowersCountByDateInterval,
 } from "../interfaces/meta-response";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
@@ -603,15 +604,37 @@ export class MetaPage extends Meta implements IMetaPage {
 
   public async utils() {
     return {
-      getFollowersCount: async () => {
+      getFollowersCountCurrent: async () => {
         return (
-          await this.api.get<GetFollowersCountResponse>(`/${this.pageId}`, {
-            params: {
-              fields: "followers_count",
-              access_token: this.pageAccessToken,
+          await this.api.get<GetFollowersCountResponseCurrent>(
+            `/${this.pageId}`,
+            {
+              params: {
+                fields: "followers_count",
+                access_token: this.pageAccessToken,
+              },
             },
-          })
+          )
         ).data.followers_count;
+      },
+      getFollowersCountByDateInterval: async (
+        startDate: Date,
+        endDate: Date,
+      ) => {
+        return (
+          await this.api.get<getFollowersCountByDateInterval>(
+            `/${this.pageId}/insights`,
+            {
+              params: {
+                metric: "page_follows",
+                period: "day",
+                since: startDate.getTime() / 1000,
+                until: endDate.getTime() / 1000,
+                access_token: this.pageAccessToken,
+              },
+            },
+          )
+        ).data.data.values;
       },
     };
   }
