@@ -391,7 +391,7 @@ export class MetaIng extends Meta implements IMetaIng {
     return this.createVideoStory(media);
   }
 
-  public async utils() {
+  public utils() {
     return {
       getFollowersCountCurrent: async () => {
         return (
@@ -418,13 +418,13 @@ export class MetaIng extends Meta implements IMetaIng {
                 metric: "follows_and_unfollows",
                 period: "day",
                 metric_type: "total_value",
-                since: startDate.getTime() / 1000,
-                until: endDate.getTime() / 1000,
+                since: Math.floor(startDate.getTime() / 1000),
+                until: Math.floor(endDate.getTime() / 1000),
                 access_token: this.pageAccessToken,
               },
             },
           )
-        ).data.data.values;
+        ).data.data[0].values;
       },
     };
   }

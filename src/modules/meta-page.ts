@@ -602,7 +602,7 @@ export class MetaPage extends Meta implements IMetaPage {
     return post_id;
   }
 
-  public async utils() {
+  public utils() {
     return {
       getFollowersCountCurrent: async () => {
         return (
@@ -628,13 +628,13 @@ export class MetaPage extends Meta implements IMetaPage {
               params: {
                 metric: "page_follows",
                 period: "day",
-                since: startDate.getTime() / 1000,
-                until: endDate.getTime() / 1000,
+                since: Math.floor(startDate.getTime() / 1000),
+                until: Math.floor(endDate.getTime() / 1000),
                 access_token: this.pageAccessToken,
               },
             },
           )
-        ).data.data.values;
+        ).data.data[0].values;
       },
     };
   }

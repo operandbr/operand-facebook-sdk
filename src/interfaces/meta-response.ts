@@ -167,7 +167,7 @@ export interface getFollowersCountByDateInterval {
     title: string;
     description: string;
     id: string;
-  };
+  }[];
   paging: {
     previous: string;
   };
