@@ -54,7 +54,7 @@ export interface ConstructorPage extends ConstructorMain {
   pageId: string;
 }
 
-export interface IMetaPage {
+export interface IPagePublish {
   getAllPosts(): Promise<PagePost[]>;
   getPostUrlById(postId: string): string;
   createPost(data: CreatePost): Promise<string>;

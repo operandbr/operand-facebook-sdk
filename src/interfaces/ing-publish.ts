@@ -25,7 +25,7 @@ export type CreatePost = {
 
 export type CreateStories = Medias;
 
-export interface IMetaIng {
+export interface IIngPublish {
   createPost(data: CreatePost): Promise<string>;
   createStories(data: CreateStories): Promise<string>;
 }

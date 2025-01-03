@@ -156,19 +156,47 @@ export interface GetFollowersCountResponseCurrent {
   id: string;
 }
 
-export interface getFollowersCountByDateInterval {
-  data: {
-    name: string;
-    period: string;
-    values: {
+interface Insights<T> {
+  name: string;
+  period: string;
+  values: T;
+  title: string;
+  description: string;
+  id: string;
+  total_value?: {
+    value: number;
+  };
+}
+
+export interface GetInsightsResponse {
+  data: Insights<
+    {
       value: number;
-      end_time: string;
-    }[];
-    title: string;
-    description: string;
-    id: string;
-  }[];
+      end_time?: string;
+    }[]
+  >[];
   paging: {
     previous: string;
   };
+}
+
+export interface GetPostWithInsightsResponse {
+  data: {
+    id: string;
+    message: string;
+    insights: {
+      data: Insights<
+        {
+          value: {
+            like?: number;
+            love: number;
+            wow: number;
+            haha: number;
+            sorry: number;
+            anger: number;
+          };
+        }[]
+      >[];
+    };
+  }[];
 }
