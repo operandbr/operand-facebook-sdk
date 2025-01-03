@@ -1,4 +1,4 @@
-import { MetaAuth } from "./modules/meta-auth";
+import { MetaAuth } from "./modules/auth/meta-auth";
 import { MetaPage } from "./modules/meta-page";
 import { MetaIng } from "./modules/meta-ing";
 import * as IMetaAuth from "./interfaces/meta-auth";

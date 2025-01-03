@@ -5,7 +5,7 @@ import {
   CreateStories,
   IPagePublish,
   VideoMediaItem,
-} from "../interfaces/page-publish";
+} from "../../interfaces/page-publish";
 import {
   DeletePagePostResponse,
   GetPagePostsResponse,
@@ -18,15 +18,15 @@ import {
   CreateFinishVideoUploadResponse,
   GetFollowersCountResponseCurrent,
   GetInsightsResponse,
-} from "../interfaces/meta-response";
+} from "../../interfaces/meta-response";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 import * as FormData from "form-data";
 import { isAfter, isBefore, addMinutes, addMonths } from "date-fns";
-import { OperandError } from "../error/operand-error";
+import { OperandError } from "../../error/operand-error";
 import * as ffmpeg from "fluent-ffmpeg";
 import * as path from "node:path";
-import { Meta } from "./meta";
+import { Meta } from "../meta";
 
 export class PagePublish extends Meta implements IPagePublish {
   protected readonly pageId: string;

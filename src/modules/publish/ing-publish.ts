@@ -5,14 +5,14 @@ import {
   IIngPublish,
   PhotoMediaItem,
   VideoMediaItem,
-} from "../interfaces/ing-publish";
-import { Meta } from "./meta";
-import { OperandError } from "../error/operand-error";
+} from "../../interfaces/ing-publish";
+import { Meta } from "../meta";
+import { OperandError } from "../../error/operand-error";
 import {
   GetStatusMediaContainerDownloadResponse,
   PostMediaContainerReelsResponse,
   SaveMediaStorageResponse,
-} from "../interfaces/meta-response";
+} from "../../interfaces/meta-response";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 

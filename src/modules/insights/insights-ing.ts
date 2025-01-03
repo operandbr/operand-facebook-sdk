@@ -1,9 +1,9 @@
 import { ConstructorIng } from "@/interfaces/ing-publish";
-import { IngPublish } from "./ing-publish";
+import { IngPublish } from "../publish/ing-publish";
 import {
   GetFollowersCountResponseCurrent,
   GetInsightsResponse,
-} from "../interfaces/meta-response";
+} from "../../interfaces/meta-response";
 import { addDays, differenceInDays } from "date-fns";
 
 export class IngInsights extends IngPublish {

@@ -1,10 +1,10 @@
 import { ConstructorPage } from "@/interfaces/page-publish";
-import { PagePublish } from "./page-publish";
+import { PagePublish } from "../publish/page-publish";
 import {
   GetInsightsResponse,
   GetFollowersCountResponseCurrent,
   GetPostWithInsightsResponse,
-} from "../interfaces/meta-response";
+} from "../../interfaces/meta-response";
 
 export class PageInsights extends PagePublish {
   constructor(constructorPage: ConstructorPage) {
