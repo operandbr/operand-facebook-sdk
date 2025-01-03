@@ -1,8 +1,8 @@
 import axios from "axios";
-import { MetaPage } from "./meta-page";
-import { CreatePost, CreateStories } from "../interfaces/page-publish";
+import { MetaPage } from "../meta-page";
+import { CreatePost, CreateStories } from "../../interfaces/page-publish";
 import * as path from "node:path";
-import { PHOTO_URL_MOCK, VIDEO_URL_MOCK } from "../__test__/mocks";
+import { PHOTO_URL_MOCK, VIDEO_URL_MOCK } from "../../__test__/mocks";
 
 // const originalFetch = global.fetch;
 
