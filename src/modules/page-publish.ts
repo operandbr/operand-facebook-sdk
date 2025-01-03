@@ -22,7 +22,7 @@ import {
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 import * as FormData from "form-data";
-import { isAfter, isBefore, addMinutes, addMonths, getTime } from "date-fns";
+import { isAfter, isBefore, addMinutes, addMonths } from "date-fns";
 import { OperandError } from "../error/operand-error";
 import * as ffmpeg from "fluent-ffmpeg";
 import * as path from "node:path";
@@ -388,7 +388,9 @@ export class PagePublish extends Meta implements IPagePublish {
         access_token: this.pageAccessToken,
         message,
         ...(!publishNow && {
-          scheduled_publish_time: Math.floor(getTime(datePublish) / 1000),
+          scheduled_publish_time: Math.floor(
+            new Date(datePublish).getTime() / 1000,
+          ),
           published: publishNow,
         }),
       })
@@ -408,7 +410,9 @@ export class PagePublish extends Meta implements IPagePublish {
         access_token: this.pageAccessToken,
         message,
         ...(!publishNow && {
-          scheduled_publish_time: Math.floor(getTime(datePublish) / 1000),
+          scheduled_publish_time: Math.floor(
+            new Date(datePublish).getTime() / 1000,
+          ),
           published: publishNow,
         }),
         attached_media: mediaIds.map((id) => ({
@@ -459,7 +463,7 @@ export class PagePublish extends Meta implements IPagePublish {
       formData.append("published", "false");
       formData.append(
         "scheduled_publish_time",
-        Math.floor(getTime(datePublish) / 1000),
+        Math.floor(new Date(datePublish).getTime() / 1000),
       );
     }
 
