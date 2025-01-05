@@ -4,7 +4,7 @@ import {
   GetFollowersCountResponseCurrent,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
-import { addDays, differenceInDays } from "date-fns";
+import { addDays, differenceInDays, endOfDay, startOfDay } from "date-fns";
 
 export class IngInsights extends IngPublish {
   constructor(constructorIng: ConstructorIng) {
@@ -15,19 +15,16 @@ export class IngInsights extends IngPublish {
     startDate: Date,
     endDate: Date,
     metric: "likes" | "comments" | "shares",
-  ) {
-    let value = 0;
+  ): Promise<{ value: number; end_time?: string }[]> {
+    const value: { value: number; end_time?: string }[] = [];
 
     let currentStart = startDate;
 
-    while (true) {
-      const daysToAdd = Math.min(
-        30,
-        differenceInDays(endDate, currentStart) + 1,
-      );
+    while (value.length !== differenceInDays(endDate, startDate) + 1) {
+      const daysToAdd = 1;
 
-      const since = currentStart;
-      const until = addDays(since, daysToAdd);
+      const since = startOfDay(currentStart);
+      const until = endOfDay(currentStart);
 
       const response = await this.api.get<GetInsightsResponse>(
         `/${this.ingId}/insights`,
@@ -43,9 +40,7 @@ export class IngInsights extends IngPublish {
         },
       );
 
-      value += response.data.data[0].total_value?.value || 0;
-
-      if (differenceInDays(endDate, currentStart) + 1 <= 30) break;
+      value.push({ value: response.data.data[0].total_value?.value || 0 });
 
       currentStart = addDays(currentStart, daysToAdd);
     }
@@ -114,7 +109,7 @@ export class IngInsights extends IngPublish {
     return values;
   }
 
-  public async getTotalLikesInAllPosts(startDate: Date, endDate: Date) {
+  public async getDayLikesInAllPosts(startDate: Date, endDate: Date) {
     return this.generateWhileLoopToGetLikesAndCommentsAndShares(
       startDate,
       endDate,
@@ -122,7 +117,7 @@ export class IngInsights extends IngPublish {
     );
   }
 
-  public async getTotalCommentsInAllPosts(startDate: Date, endDate: Date) {
+  public async getDayCommentsInAllPosts(startDate: Date, endDate: Date) {
     return this.generateWhileLoopToGetLikesAndCommentsAndShares(
       startDate,
       endDate,
@@ -130,11 +125,49 @@ export class IngInsights extends IngPublish {
     );
   }
 
-  public async getTotalSharesInAllPosts(startDate: Date, endDate: Date) {
+  public async getDaySharesInAllPosts(startDate: Date, endDate: Date) {
     return this.generateWhileLoopToGetLikesAndCommentsAndShares(
       startDate,
       endDate,
       "shares",
     );
+  }
+
+  public async getTotalLikesInAllPosts(startDate: Date, endDate: Date) {
+    const values = await this.generateWhileLoopToGetLikesAndCommentsAndShares(
+      startDate,
+      endDate,
+      "likes",
+    );
+
+    return values.reduce((acc, curr) => acc + curr.value, 0);
+  }
+
+  public async getTotalCommentsInAllPosts(startDate: Date, endDate: Date) {
+    const values = await this.generateWhileLoopToGetLikesAndCommentsAndShares(
+      startDate,
+      endDate,
+      "comments",
+    );
+
+    return values.reduce((acc, curr) => acc + curr.value, 0);
+  }
+
+  public async getTotalSharesInAllPosts(startDate: Date, endDate: Date) {
+    const values = await this.generateWhileLoopToGetLikesAndCommentsAndShares(
+      startDate,
+      endDate,
+      "shares",
+    );
+
+    return values.reduce((acc, curr) => acc + curr.value, 0);
+  }
+
+  public async getTotalInteractionsInAllPosts(startDate: Date, endDate: Date) {
+    const likes = await this.getTotalLikesInAllPosts(startDate, endDate);
+    const comments = await this.getTotalCommentsInAllPosts(startDate, endDate);
+    const shares = await this.getTotalSharesInAllPosts(startDate, endDate);
+
+    return likes + comments + shares;
   }
 }

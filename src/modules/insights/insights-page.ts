@@ -3,7 +3,7 @@ import { PagePublish } from "../publish/page-publish";
 import {
   GetInsightsResponse,
   GetFollowersCountResponseCurrent,
-  GetPostWithInsightsResponse,
+  GetInsightsPageActionsPostReactionsTotalResponse,
 } from "../../interfaces/meta-response";
 
 export class PageInsights extends PagePublish {
@@ -64,29 +64,34 @@ export class PageInsights extends PagePublish {
     ).data.data[0].values;
   }
 
-  public async getTotalLikesInAllPosts(startDate: Date, endDate: Date) {
-    const result = await this.api.get<GetPostWithInsightsResponse>(
-      `/${this.pageId}/posts`,
-      {
-        params: {
-          fields: "insights.metric(post_reactions_like_total)",
-          since: Math.floor(startDate.getTime() / 1000),
-          until: Math.floor(endDate.getTime() / 1000),
-          access_token: this.pageAccessToken,
+  public async getDayLikesTypesInAllPosts(startDate: Date, endDate: Date) {
+    const response =
+      await this.api.get<GetInsightsPageActionsPostReactionsTotalResponse>(
+        `/${this.pageId}/insights/page_actions_post_reactions_total`,
+        {
+          params: {
+            period: "day",
+            since: Math.floor(startDate.getTime() / 1000),
+            until: Math.floor(endDate.getTime() / 1000),
+            access_token: this.pageAccessToken,
+          },
         },
-      },
+      );
+
+    return response.data.data[0].values.map(
+      (value) =>
+        value.anger +
+        value.haha +
+        value.like +
+        value.love +
+        value.sorry +
+        value.wow,
     );
+  }
 
-    let count = 0;
+  public async getTotalLikesTypesInAllPosts(startDate: Date, endDate: Date) {
+    const values = await this.getDayLikesTypesInAllPosts(startDate, endDate);
 
-    result.data.data.forEach((data) => {
-      const valueOfLifetime = data.insights.data[0].values;
-
-      const arrayOfValues = Object.values(valueOfLifetime[0].value);
-
-      count += arrayOfValues.reduce((acc, value) => acc + value, 0);
-    });
-
-    return count;
+    return values.reduce((acc, value) => acc + value, 0);
   }
 }

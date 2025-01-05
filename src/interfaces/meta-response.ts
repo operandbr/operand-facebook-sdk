@@ -180,23 +180,18 @@ export interface GetInsightsResponse {
   };
 }
 
-export interface GetPostWithInsightsResponse {
-  data: {
-    id: string;
-    message: string;
-    insights: {
-      data: Insights<
-        {
-          value: {
-            like?: number;
-            love: number;
-            wow: number;
-            haha: number;
-            sorry: number;
-            anger: number;
-          };
-        }[]
-      >[];
-    };
-  }[];
+export interface GetInsightsPageActionsPostReactionsTotalResponse {
+  data: Insights<
+    {
+      like?: number;
+      love?: number;
+      wow?: number;
+      haha?: number;
+      sorry?: number;
+      anger?: number;
+    }[]
+  >[];
+  paging: {
+    previous: string;
+  };
 }
