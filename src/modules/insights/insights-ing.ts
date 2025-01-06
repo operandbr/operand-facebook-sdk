@@ -82,7 +82,7 @@ export class IngInsights extends IngPublish {
       },
     );
 
-    return response.data[0]?.values || [];
+    return response.data.data[0]?.values || [];
   }
 
   public async getDayAllImpressions(startDate: Date, endDate: Date) {
