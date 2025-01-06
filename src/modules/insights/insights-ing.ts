@@ -4,7 +4,13 @@ import {
   GetFollowersCountResponseCurrent,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
-import { addDays, differenceInDays, endOfDay, startOfDay } from "date-fns";
+import {
+  addDays,
+  differenceInDays,
+  endOfDay,
+  startOfDay,
+  subDays,
+} from "date-fns";
 
 export class IngInsights extends IngPublish {
   constructor(constructorIng: ConstructorIng) {
@@ -59,19 +65,24 @@ export class IngInsights extends IngPublish {
     ).data.followers_count;
   }
 
-  public async getDayFollowersByDateInterval(startDate: Date, endDate: Date) {
-    return (
-      await this.api.get<GetInsightsResponse>(`/${this.ingId}/insights`, {
+  public async getDayFollowersByTheLast30Days() {
+    const endDate = endOfDay(new Date());
+    const startDate = subDays(endDate, 30);
+
+    const response = await this.api.get<GetInsightsResponse>(
+      `/${this.ingId}/insights`,
+      {
         params: {
-          metric: "follows_and_unfollows",
+          metric: "follower_count",
           period: "day",
-          metric_type: "total_value",
           since: Math.floor(startDate.getTime() / 1000),
           until: Math.floor(endDate.getTime() / 1000),
           access_token: this.pageAccessToken,
         },
-      })
-    ).data.data[0].values;
+      },
+    );
+
+    return response.data[0]?.values || [];
   }
 
   public async getDayAllImpressions(startDate: Date, endDate: Date) {
@@ -109,7 +120,7 @@ export class IngInsights extends IngPublish {
     return values;
   }
 
-  public async getDayLikesInAllPosts(startDate: Date, endDate: Date) {
+  public async getDayAllLikesInAllPosts(startDate: Date, endDate: Date) {
     return this.generateWhileLoopToGetLikesAndCommentsAndShares(
       startDate,
       endDate,
@@ -117,7 +128,7 @@ export class IngInsights extends IngPublish {
     );
   }
 
-  public async getDayCommentsInAllPosts(startDate: Date, endDate: Date) {
+  public async getDayAllCommentsInAllPosts(startDate: Date, endDate: Date) {
     return this.generateWhileLoopToGetLikesAndCommentsAndShares(
       startDate,
       endDate,
@@ -125,7 +136,7 @@ export class IngInsights extends IngPublish {
     );
   }
 
-  public async getDaySharesInAllPosts(startDate: Date, endDate: Date) {
+  public async getDayAllSharesInAllPosts(startDate: Date, endDate: Date) {
     return this.generateWhileLoopToGetLikesAndCommentsAndShares(
       startDate,
       endDate,

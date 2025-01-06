@@ -5,6 +5,7 @@ import {
   GetFollowersCountResponseCurrent,
   GetInsightsPageActionsPostReactionsTotalResponse,
 } from "../../interfaces/meta-response";
+import { endOfDay, startOfDay } from "date-fns";
 
 export class PageInsights extends PagePublish {
   constructor(constructorPage: ConstructorPage) {
@@ -28,8 +29,8 @@ export class PageInsights extends PagePublish {
         params: {
           metric: "page_follows",
           period: "day",
-          since: Math.floor(startDate.getTime() / 1000),
-          until: Math.floor(endDate.getTime() / 1000),
+          since: Math.floor(startOfDay(startDate).getTime() / 1000),
+          until: Math.floor(endOfDay(endDate).getTime() / 1000),
           access_token: this.pageAccessToken,
         },
       })
@@ -42,8 +43,8 @@ export class PageInsights extends PagePublish {
         params: {
           metric: "page_impressions",
           period: "day",
-          since: Math.floor(startDate.getTime() / 1000),
-          until: Math.floor(endDate.getTime() / 1000),
+          since: Math.floor(startOfDay(startDate).getTime() / 1000),
+          until: Math.floor(endOfDay(endDate).getTime() / 1000),
           access_token: this.pageAccessToken,
         },
       })
@@ -56,23 +57,23 @@ export class PageInsights extends PagePublish {
         params: {
           metric: "page_impressions_paid",
           period: "day",
-          since: Math.floor(startDate.getTime() / 1000),
-          until: Math.floor(endDate.getTime() / 1000),
+          since: Math.floor(startOfDay(startDate).getTime() / 1000),
+          until: Math.floor(endOfDay(endDate).getTime() / 1000),
           access_token: this.pageAccessToken,
         },
       })
     ).data.data[0].values;
   }
 
-  public async getDayLikesTypesInAllPosts(startDate: Date, endDate: Date) {
+  public async getDayAllLikesTypesInAllPosts(startDate: Date, endDate: Date) {
     const response =
       await this.api.get<GetInsightsPageActionsPostReactionsTotalResponse>(
         `/${this.pageId}/insights/page_actions_post_reactions_total`,
         {
           params: {
             period: "day",
-            since: Math.floor(startDate.getTime() / 1000),
-            until: Math.floor(endDate.getTime() / 1000),
+            since: Math.floor(startOfDay(startDate).getTime() / 1000),
+            until: Math.floor(endOfDay(endDate).getTime() / 1000),
             access_token: this.pageAccessToken,
           },
         },
@@ -80,17 +81,17 @@ export class PageInsights extends PagePublish {
 
     return response.data.data[0].values.map(
       (value) =>
-        value.anger +
-        value.haha +
-        value.like +
-        value.love +
-        value.sorry +
-        value.wow,
+        (value?.value.anger || 0) +
+        (value?.value.haha || 0) +
+        (value?.value.like || 0) +
+        (value?.value.love || 0) +
+        (value?.value.sorry || 0) +
+        (value?.value.wow || 0),
     );
   }
 
-  public async getTotalLikesTypesInAllPosts(startDate: Date, endDate: Date) {
-    const values = await this.getDayLikesTypesInAllPosts(startDate, endDate);
+  public async getTotalAllLikesTypesInAllPosts(startDate: Date, endDate: Date) {
+    const values = await this.getDayAllLikesTypesInAllPosts(startDate, endDate);
 
     return values.reduce((acc, value) => acc + value, 0);
   }

@@ -183,12 +183,15 @@ export interface GetInsightsResponse {
 export interface GetInsightsPageActionsPostReactionsTotalResponse {
   data: Insights<
     {
-      like?: number;
-      love?: number;
-      wow?: number;
-      haha?: number;
-      sorry?: number;
-      anger?: number;
+      value: {
+        like?: number;
+        love?: number;
+        wow?: number;
+        haha?: number;
+        sorry?: number;
+        anger?: number;
+      };
+      end_time?: string;
     }[]
   >[];
   paging: {
