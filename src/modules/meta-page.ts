@@ -1,4 +1,4 @@
-import { ConstructorPage } from "@/interfaces/page-publish";
+import { ConstructorPage } from "../interfaces/page-publish";
 import { PageInsights } from "./insights/insights-page";
 
 export class MetaPage extends PageInsights {

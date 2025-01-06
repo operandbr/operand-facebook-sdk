@@ -1,4 +1,4 @@
-import { ConstructorPage } from "@/interfaces/page-publish";
+import { ConstructorPage } from "../../interfaces/page-publish";
 import { PagePublish } from "../publish/page-publish";
 import {
   GetInsightsResponse,

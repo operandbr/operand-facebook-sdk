@@ -1,4 +1,4 @@
-import { ConstructorIng } from "@/interfaces/ing-publish";
+import { ConstructorIng } from "../../interfaces/ing-publish";
 import { IngPublish } from "../publish/ing-publish";
 import {
   GetFollowersCountResponseCurrent,
