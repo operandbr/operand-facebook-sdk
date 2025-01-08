@@ -2,6 +2,7 @@ import { ConstructorIng } from "../../interfaces/ing-publish";
 import { IngPublish } from "../publish/ing-publish";
 import {
   GetFollowersCountResponseCurrent,
+  GetInsightsPageFollowersAndUnFollowersResponse,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
 import {
@@ -83,6 +84,32 @@ export class IngInsights extends IngPublish {
     );
 
     return response.data.data[0]?.values || [];
+  }
+
+  public async getDayUnFollowersByTheLast30Days() {
+    const endDate = endOfDay(new Date());
+    const startDate = subDays(endDate, 30);
+
+    const response =
+      await this.api.get<GetInsightsPageFollowersAndUnFollowersResponse>(
+        `/${this.ingId}/insights`,
+        {
+          params: {
+            metric: "follows_and_unfollows",
+            period: "day",
+            since: Math.floor(startDate.getTime() / 1000),
+            until: Math.floor(endDate.getTime() / 1000),
+            access_token: this.pageAccessToken,
+          },
+        },
+      );
+
+    return (
+      response.data.data[0]?.values.map((value) => ({
+        value: value.value.unfollows,
+        end_time: value.end_time,
+      })) || []
+    );
   }
 
   public async getDayAllImpressions(startDate: Date, endDate: Date) {
