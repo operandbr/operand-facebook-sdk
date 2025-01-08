@@ -41,4 +41,5 @@ export type FieldsPage = Array<
 export type GetAccounts = {
   fields: FieldsPage;
   accessToken: string;
+  apiVersion: ApiVersion;
 };
