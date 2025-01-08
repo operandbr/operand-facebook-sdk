@@ -1,6 +1,6 @@
 import axios from "axios";
 import { MetaAuth } from "./meta-auth";
-import { CreateMetaAuth } from "@/interfaces/meta-auth";
+import { ApiVersion, CreateMetaAuth } from "@/interfaces/meta-auth";
 
 jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -51,6 +51,7 @@ describe("Module MetaAuth", () => {
       const requestData = {
         fields: ["id", "name"],
         accessToken: "test-access-token",
+        apiVersion: "v21.0" as ApiVersion,
       };
 
       const mockGetPageAccountsResponse = {
