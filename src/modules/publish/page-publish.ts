@@ -36,6 +36,13 @@ export class PagePublish extends Meta implements IPagePublish {
     this.pageId = pageId;
   }
 
+  protected isValidUrl(url: string): boolean {
+    const regexUrl =
+      /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
+
+    return regexUrl.test(url);
+  }
+
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
     if (file === "photo") {
       return ["jpeg", "bmp", "png", "gif", "tiff", "jpg"].includes(type);
@@ -353,13 +360,29 @@ export class PagePublish extends Meta implements IPagePublish {
   }
 
   public async getAllPosts(): Promise<PagePost[]> {
-    return (
-      await this.api.get<GetPagePostsResponse>(`/${this.pageId}/feed`, {
-        params: {
-          access_token: this.pageAccessToken,
-        },
-      })
-    ).data.data;
+    const values: PagePost[] = [];
+
+    let nextUrl = `${this.api.getUri()}/${this.pageId}/feed?access_token=${this.pageAccessToken}`;
+
+    while (nextUrl) {
+      const response = (await (
+        await fetch(nextUrl)
+      ).json()) as GetPagePostsResponse;
+
+      values.push(...response.data);
+
+      const isValidNext =
+        response.paging?.next && this.isValidUrl(response.paging.next);
+
+      if (!isValidNext) {
+        nextUrl = "";
+        break;
+      }
+
+      nextUrl = response.paging.next;
+    }
+
+    return values;
   }
 
   public getPostUrlById(postId: string): string {
