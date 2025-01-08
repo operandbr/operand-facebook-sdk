@@ -5,12 +5,13 @@ export interface PagePost {
 }
 
 export interface PaginationCursors {
-  before: string;
-  after: string;
+  before?: string;
+  after?: string;
 }
 
 export interface PaginationInfo {
   cursors: PaginationCursors;
+  next?: string;
 }
 
 export interface GetPagePostsResponse {
@@ -122,6 +123,19 @@ export interface FacebookPage {
   };
 }
 
+export interface FacebookAdAccount {
+  data: Array<{
+    account_id: string;
+    id: string;
+  }>;
+  paging: {
+    cursors: {
+      before: string;
+      after: string;
+    };
+  };
+}
+
 export interface GetPageAccountsResponse {
   data: Array<FacebookPage>;
 }
@@ -180,6 +194,21 @@ export interface GetInsightsResponse {
   };
 }
 
+export interface GetInsightsPageFollowersAndUnFollowersResponse {
+  data: Insights<
+    {
+      value: {
+        follows: 100;
+        unfollows: 50;
+      };
+      end_time?: string;
+    }[]
+  >[];
+  paging: {
+    previous: string;
+  };
+}
+
 export interface GetInsightsPageActionsPostReactionsTotalResponse {
   data: Insights<
     {
@@ -197,4 +226,32 @@ export interface GetInsightsPageActionsPostReactionsTotalResponse {
   paging: {
     previous: string;
   };
+}
+
+export interface PostComment {
+  id: string;
+  message: string;
+  created_time: string;
+  from: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface GetPostCommentsResponse {
+  data: PostComment[];
+  paging: PaginationInfo;
+}
+
+export interface AdMetrics {
+  ad_id: string;
+  ad_name: string;
+  clicks: number;
+  inline_link_clicks: number;
+  impressions: number;
+  reach: number;
+}
+
+export interface AdMetricsResponse {
+  data: AdMetrics[];
 }
