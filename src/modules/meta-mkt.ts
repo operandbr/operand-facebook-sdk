@@ -1,4 +1,4 @@
-import { ConstructorMkt } from "@/interfaces/meta-mkt";
+import { ConstructorMkt } from "../interfaces/meta-mkt";
 import { MktInsights } from "./insights/insights-mkt";
 
 export class MetaMkt extends MktInsights {

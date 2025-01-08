@@ -1,7 +1,7 @@
 import { Meta } from "../meta";
-import { AdMetricsResponse } from "@/interfaces/meta-response";
+import { AdMetricsResponse } from "../../interfaces/meta-response";
 import { endOfDay, startOfDay } from "date-fns";
-import { ConstructorMkt } from "@/interfaces/meta-mkt";
+import { ConstructorMkt } from "../../interfaces/meta-mkt";
 
 export class MktInsights extends Meta {
   protected readonly adAAccountId: string;
