@@ -5,6 +5,7 @@ import {
 } from "../../interfaces/meta-auth";
 import {
   CreateAccessTokenResponse,
+  FacebookAdAccount,
   FacebookPage,
   GetPageAccountsResponse,
 } from "../../interfaces/meta-response";
@@ -17,14 +18,7 @@ export class MetaAuth {
     redirect_uri,
     apiVersion,
     code,
-  }: CreateMetaAuth): Promise<{
-    accessToken: string;
-    getAccounts: ({
-      fields,
-    }: {
-      fields: FieldsPage;
-    }) => Promise<FacebookPage[]>;
-  }> {
+  }: CreateMetaAuth) {
     const api = generateAxiosInstance(apiVersion);
 
     const accessToken = (
@@ -39,7 +33,10 @@ export class MetaAuth {
     return {
       accessToken,
       getAccounts: ({ fields }: { fields: FieldsPage }) => {
-        return MetaAuth.getAccounts({ fields, accessToken });
+        return MetaAuth.getAccounts({ fields, accessToken, apiVersion });
+      },
+      getAdAccounts: () => {
+        return MetaAuth.getAdAccounts({ accessToken, apiVersion });
       },
     };
   }
@@ -47,14 +44,30 @@ export class MetaAuth {
   public static async getAccounts({
     fields,
     accessToken,
+    apiVersion,
   }: GetAccounts): Promise<FacebookPage[]> {
-    const api = generateAxiosInstance("v21.0");
+    const api = generateAxiosInstance(apiVersion);
 
     return (
       await api.get<GetPageAccountsResponse>(`/me/accounts`, {
         params: {
           access_token: accessToken,
           fields: fields.join(","),
+        },
+      })
+    ).data.data;
+  }
+
+  public static async getAdAccounts({
+    accessToken,
+    apiVersion,
+  }: Omit<GetAccounts, "fields">): Promise<FacebookPage[]> {
+    const api = generateAxiosInstance(apiVersion);
+
+    return (
+      await api.get<FacebookAdAccount>(`/me/adaccounts`, {
+        params: {
+          access_token: accessToken,
         },
       })
     ).data.data;
