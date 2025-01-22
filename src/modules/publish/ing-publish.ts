@@ -4,6 +4,7 @@ import {
   CreateStories,
   IIngPublish,
   PhotoMediaItem,
+  saveMediaInMetaIngContainer,
   VideoMediaItem,
 } from "../../interfaces/ing-publish";
 import { Meta } from "../meta";
@@ -82,11 +83,12 @@ export class IngPublish extends Meta implements IIngPublish {
     return status.size / 1024 / 1024 / 1024 <= 1;
   };
 
-  private savePhotoInMetaContainerByUrl = async (
-    url: string,
-    to: "REELS" | "STORIES" | "FEED",
-    isCarouselItem?: boolean,
-  ): Promise<string> => {
+  private savePhotoInMetaContainerByUrl = async ({
+    to,
+    value: url,
+    isCarouselItem,
+    caption,
+  }: saveMediaInMetaIngContainer): Promise<string> => {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
 
@@ -117,6 +119,7 @@ export class IngPublish extends Meta implements IIngPublish {
             ...(to === "REELS" ? { media_type: "REELS" } : {}),
             ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
             access_token: this.pageAccessToken,
+            ...(caption ? { caption } : {}),
           },
         },
       )
@@ -127,11 +130,12 @@ export class IngPublish extends Meta implements IIngPublish {
     return containerId;
   };
 
-  private saveVideoInMetaContainerByUrl = async (
-    url: string,
-    to: "REELS" | "STORIES" | "FEED",
-    isCarouselItem?: boolean,
-  ): Promise<string> => {
+  private saveVideoInMetaContainerByUrl = async ({
+    to,
+    value: url,
+    caption,
+    isCarouselItem,
+  }: saveMediaInMetaIngContainer): Promise<string> => {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
 
@@ -160,8 +164,9 @@ export class IngPublish extends Meta implements IIngPublish {
             video_url: url,
             access_token: this.pageAccessToken,
             ...(isCarouselItem ? { is_carousel_item: true } : {}),
-            ...(to === "REELS" ? { media_type: "REELS" } : {}),
+            ...(["REELS", "FEED"].includes(to) ? { media_type: "REELS" } : {}),
             ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
+            ...(caption ? { caption } : {}),
           },
         },
       )
@@ -172,11 +177,12 @@ export class IngPublish extends Meta implements IIngPublish {
     return containerId;
   };
 
-  private saveVideoInMetaContainerByPath = async (
-    path: string,
-    to: "REELS" | "STORIES" | "FEED",
-    isCarouselItem?: boolean,
-  ): Promise<string> => {
+  private saveVideoInMetaContainerByPath = async ({
+    to,
+    value: path,
+    caption,
+    isCarouselItem,
+  }: saveMediaInMetaIngContainer): Promise<string> => {
     const arrayBuffer = await fs.promises.readFile(path);
 
     const fileType = await FileType.fromBuffer(arrayBuffer);
@@ -203,10 +209,11 @@ export class IngPublish extends Meta implements IIngPublish {
       {
         params: {
           ...(isCarouselItem ? { is_carousel_item: true } : {}),
-          ...(to === "REELS" ? { media_type: "REELS" } : {}),
+          ...(["REELS", "FEED"].includes(to) ? { media_type: "REELS" } : {}),
           ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
           upload_type: "resumable",
           access_token: this.pageAccessToken,
+          ...(caption ? { caption } : {}),
         },
       },
     );
@@ -235,7 +242,11 @@ export class IngPublish extends Meta implements IIngPublish {
   ): Promise<string[]> => {
     return Promise.all(
       photos.map(async (photo) => {
-        return this.savePhotoInMetaContainerByUrl(photo.value, "FEED", true);
+        return this.savePhotoInMetaContainerByUrl({
+          value: photo.value,
+          to: "FEED",
+          isCarouselItem: true,
+        });
       }),
     );
   };
@@ -245,22 +256,40 @@ export class IngPublish extends Meta implements IIngPublish {
   ): Promise<string[]> => {
     return Promise.all(
       videos.map(async (video) => {
+        const data = {
+          to: "FEED" as const,
+          value: video.value,
+          isCarouselItem: true,
+        };
+
         return video.source === "url"
-          ? this.saveVideoInMetaContainerByUrl(video.value, "FEED", true)
-          : this.saveVideoInMetaContainerByPath(video.value, "FEED", true);
+          ? this.saveVideoInMetaContainerByUrl(data)
+          : this.saveVideoInMetaContainerByPath(data);
       }),
     );
   };
 
   private createUniquePost = async (post: CreatePost): Promise<string> => {
-    const { medias } = post;
+    const { medias, caption } = post;
 
     const containerId =
       medias[0].mediaType === "photo"
-        ? await this.savePhotoInMetaContainerByUrl(medias[0].value, "FEED")
+        ? await this.savePhotoInMetaContainerByUrl({
+            value: medias[0].value,
+            to: "FEED",
+            caption,
+          })
         : medias[0].source === "url"
-          ? await this.saveVideoInMetaContainerByUrl(medias[0].value, "FEED")
-          : await this.saveVideoInMetaContainerByPath(medias[0].value, "FEED");
+          ? await this.saveVideoInMetaContainerByUrl({
+              to: "FEED",
+              value: medias[0].value,
+              caption,
+            })
+          : await this.saveVideoInMetaContainerByPath({
+              to: "FEED",
+              value: medias[0].value,
+              caption,
+            });
 
     await this.verifyStatusCodeContainerVideoDownload(containerId);
 
@@ -337,10 +366,10 @@ export class IngPublish extends Meta implements IIngPublish {
   }
 
   private async createPhotoStory(photo: PhotoMediaItem): Promise<string> {
-    const photoId = await this.savePhotoInMetaContainerByUrl(
-      photo.value,
-      "STORIES",
-    );
+    const photoId = await this.savePhotoInMetaContainerByUrl({
+      value: photo.value,
+      to: "STORIES",
+    });
 
     await this.verifyStatusCodeContainerVideoDownload(photoId);
 
@@ -359,10 +388,15 @@ export class IngPublish extends Meta implements IIngPublish {
   }
 
   private async createVideoStory(video: VideoMediaItem): Promise<string> {
+    const data = {
+      to: "STORIES" as const,
+      value: video.value,
+    };
+
     const videoId =
       video.source === "url"
-        ? await this.saveVideoInMetaContainerByUrl(video.value, "STORIES")
-        : await this.saveVideoInMetaContainerByPath(video.value, "STORIES");
+        ? await this.saveVideoInMetaContainerByUrl(data)
+        : await this.saveVideoInMetaContainerByPath(data);
 
     await this.verifyStatusCodeContainerVideoDownload(videoId);
 

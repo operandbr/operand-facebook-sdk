@@ -29,3 +29,10 @@ export interface IIngPublish {
   createPost(data: CreatePost): Promise<string>;
   createStories(data: CreateStories): Promise<string>;
 }
+
+export interface saveMediaInMetaIngContainer {
+  value: string;
+  to: "REELS" | "STORIES" | "FEED";
+  isCarouselItem?: boolean;
+  caption?: string;
+}
