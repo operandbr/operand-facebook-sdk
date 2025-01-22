@@ -1,5 +1,4 @@
 import { ConstructorIng } from "../../interfaces/ing-publish";
-import { IngPublish } from "../publish/ing-publish";
 import {
   GetFollowersCountResponseCurrent,
   GetInsightsPageFollowersAndUnFollowersResponse,
@@ -12,8 +11,9 @@ import {
   startOfDay,
   subDays,
 } from "date-fns";
+import { IngComments } from "../comments/ing-comments";
 
-export class IngInsights extends IngPublish {
+export class IngInsights extends IngComments {
   constructor(constructorIng: ConstructorIng) {
     super(constructorIng);
   }

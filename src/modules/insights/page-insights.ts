@@ -1,5 +1,4 @@
 import { ConstructorPage } from "../../interfaces/page-publish";
-import { PagePublish } from "../publish/page-publish";
 import {
   GetInsightsResponse,
   GetFollowersCountResponseCurrent,
@@ -9,8 +8,9 @@ import {
 } from "../../interfaces/meta-response";
 import { addDays, endOfDay, isSameDay, startOfDay, subDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
+import { PageComments } from "../comments/page-comments";
 
-export class PageInsights extends PagePublish {
+export class PageInsights extends PageComments {
   constructor(constructorPage: ConstructorPage) {
     super(constructorPage);
   }
