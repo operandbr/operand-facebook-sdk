@@ -17,4 +17,22 @@ export class IngComments extends IngPublish {
 
     return response.data.id;
   }
+
+  public async updateCommentStatus(
+    postId: string,
+    enabled: boolean,
+  ): Promise<boolean> {
+    await this.api.post(
+      `/${postId}`,
+      {},
+      {
+        params: {
+          comment_enabled: enabled,
+          access_token: this.pageAccessToken,
+        },
+      },
+    );
+
+    return true;
+  }
 }
