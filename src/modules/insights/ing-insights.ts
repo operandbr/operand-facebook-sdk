@@ -96,6 +96,7 @@ export class IngInsights extends IngComments {
         {
           params: {
             metric: "follows_and_unfollows",
+            metric_type: "total_value",
             period: "day",
             since: Math.floor(startDate.getTime() / 1000),
             until: Math.floor(endDate.getTime() / 1000),
@@ -209,3 +210,5 @@ export class IngInsights extends IngComments {
     return likes + comments + shares;
   }
 }
+
+(async () => {})();
