@@ -22,6 +22,8 @@ export class MktInsights extends Meta {
           until: Math.floor(endOfDay(endDate).getTime() / 1000),
         },
       })
-    ).data.data[0].impressions;
+    ).data.data.map((value) => ({
+      value: value.impressions,
+    }));
   }
 }
