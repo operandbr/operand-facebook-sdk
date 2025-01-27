@@ -24,12 +24,14 @@ export class MktInsights extends Meta {
       })
     ).data.data;
 
-    const result: number[] = [];
+    const result: { value: number }[] = [];
 
     const days = differenceInDays(endDate, startDate);
 
     for (let i = 0; i <= days; i++) {
-      result.push(response[i]?.impressions ?? 0);
+      result.push({
+        value: response[i]?.impressions ?? 0,
+      });
     }
 
     return result;
