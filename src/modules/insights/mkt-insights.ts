@@ -11,17 +11,17 @@ export class MktInsights extends Meta {
     this.adAAccountId = constructorMkt.adAAccountId;
   }
 
-  public async getDayClicksInLink(startDate: Date, endDate: Date) {
+  public async getDayPaidImpressions(startDate: Date, endDate: Date) {
     return (
       await this.api.get<AdMetricsResponse>(`/${this.adAAccountId}/insights`, {
         params: {
-          fields: "clicks,inline_link_clicks,impressions,reach",
+          fields: "impressions",
           access_token: this.pageAccessToken,
           time_increment: "1",
           since: Math.floor(startOfDay(startDate).getTime() / 1000),
           until: Math.floor(endOfDay(endDate).getTime() / 1000),
         },
       })
-    ).data.data;
+    ).data.data[0].impressions;
   }
 }
