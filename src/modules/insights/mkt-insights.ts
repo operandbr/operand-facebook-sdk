@@ -1,6 +1,6 @@
 import { Meta } from "../meta";
 import { AdMetricsResponse } from "../../interfaces/meta-response";
-import { endOfDay, startOfDay } from "date-fns";
+import { differenceInDays, endOfDay, startOfDay } from "date-fns";
 import { ConstructorMkt } from "../../interfaces/meta-mkt";
 
 export class MktInsights extends Meta {
@@ -12,7 +12,7 @@ export class MktInsights extends Meta {
   }
 
   public async getDayPaidImpressions(startDate: Date, endDate: Date) {
-    return (
+    const response = (
       await this.api.get<AdMetricsResponse>(`/${this.adAAccountId}/insights`, {
         params: {
           fields: "impressions",
@@ -22,8 +22,16 @@ export class MktInsights extends Meta {
           until: Math.floor(endOfDay(endDate).getTime() / 1000),
         },
       })
-    ).data.data.map((value) => ({
-      value: value.impressions,
-    }));
+    ).data.data;
+
+    const result: number[] = [];
+
+    const days = differenceInDays(endDate, startDate);
+
+    for (let i = 0; i <= days; i++) {
+      result.push(response[i]?.impressions ?? 0);
+    }
+
+    return result;
   }
 }
