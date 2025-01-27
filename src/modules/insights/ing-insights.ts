@@ -210,5 +210,3 @@ export class IngInsights extends IngComments {
     return likes + comments + shares;
   }
 }
-
-(async () => {})();
