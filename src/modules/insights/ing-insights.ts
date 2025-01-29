@@ -83,7 +83,21 @@ export class IngInsights extends IngComments {
       },
     );
 
-    return response.data.data[0]?.values || [];
+    const difference = differenceInDays(endDate, startDate);
+
+    const values = response.data.data[0]?.values || [];
+
+    const result: { value: number; end_time?: string }[] = [];
+
+    for (let i = 0; i < difference; i++) {
+      const date = addDays(startDate, i);
+
+      const value = values[i]?.value || 0;
+
+      result.push({ value, end_time: date.toISOString() });
+    }
+
+    return result;
   }
 
   public async getDayUnFollowersByTheLast30Days() {
@@ -105,12 +119,21 @@ export class IngInsights extends IngComments {
         },
       );
 
-    return (
-      response.data.data[0]?.values.map((value) => ({
-        value: value.value.unfollows,
-        end_time: value.end_time,
-      })) || []
-    );
+    const difference = differenceInDays(endDate, startDate);
+
+    const values = response.data.data[0]?.values || [];
+
+    const result: { value: number; end_time?: string }[] = [];
+
+    for (let i = 0; i < difference; i++) {
+      const date = addDays(startDate, i);
+
+      const value = values[i]?.value.unfollows || 0;
+
+      result.push({ value: value, end_time: date.toISOString() });
+    }
+
+    return result;
   }
 
   public async getDayAllImpressions(startDate: Date, endDate: Date) {
