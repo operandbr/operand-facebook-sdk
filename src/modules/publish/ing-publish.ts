@@ -27,7 +27,7 @@ export class IngPublish extends Meta implements IIngPublish {
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
     return file === "photo"
-      ? ["jpeg", "jpg"].includes(type)
+      ? ["jpeg", "jpg", "png"].includes(type)
       : ["mp4"].includes(type);
   }
 
