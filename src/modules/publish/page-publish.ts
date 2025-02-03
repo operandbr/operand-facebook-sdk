@@ -16,8 +16,6 @@ import {
   CreatePhotoStoriesResponse,
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
-  GetFollowersCountResponseCurrent,
-  GetInsightsResponse,
 } from "../../interfaces/meta-response";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
@@ -627,39 +625,5 @@ export class PagePublish extends Meta implements IPagePublish {
     );
 
     return post_id;
-  }
-
-  public insights() {
-    return {
-      getFollowersCountCurrent: async () => {
-        return (
-          await this.api.get<GetFollowersCountResponseCurrent>(
-            `/${this.pageId}`,
-            {
-              params: {
-                fields: "followers_count",
-                access_token: this.pageAccessToken,
-              },
-            },
-          )
-        ).data.followers_count;
-      },
-      getFollowersCountByDateInterval: async (
-        startDate: Date,
-        endDate: Date,
-      ) => {
-        return (
-          await this.api.get<GetInsightsResponse>(`/${this.pageId}/insights`, {
-            params: {
-              metric: "page_follows",
-              period: "day",
-              since: Math.floor(startDate.getTime() / 1000),
-              until: Math.floor(endDate.getTime() / 1000),
-              access_token: this.pageAccessToken,
-            },
-          })
-        ).data.data[0].values;
-      },
-    };
   }
 }
