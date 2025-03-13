@@ -50,6 +50,12 @@ type CreateReelsUrl = {
 
 export type CreateReels = CreateReelsPath | CreateReelsUrl;
 
+export type SetThumbnailToReels = {
+  source: "url" | "path";
+  value: string;
+  videoId: string;
+};
+
 export interface ConstructorPage extends ConstructorMain {
   pageId: string;
 }
@@ -61,5 +67,6 @@ export interface IPagePublish {
   updatePost(postId: string, message: string): Promise<boolean>;
   deletePost(postId: string): Promise<boolean>;
   createStories(data: CreateStories): Promise<string>;
-  createReels(data: CreateReels): Promise<string>;
+  createReels(data: CreateReels): Promise<{ postId: string; videoId: string }>;
+  setThumbnailToReels(data: SetThumbnailToReels): Promise<{ success: boolean }>;
 }
