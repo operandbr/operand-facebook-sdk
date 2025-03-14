@@ -88,6 +88,8 @@ export class IngPublish extends Meta implements IIngPublish {
     value: url,
     isCarouselItem,
     caption,
+    coverUrl,
+    thumbOffset,
   }: saveMediaInMetaIngContainer): Promise<string> => {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
@@ -120,6 +122,8 @@ export class IngPublish extends Meta implements IIngPublish {
             ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
             access_token: this.pageAccessToken,
             ...(caption ? { caption } : {}),
+            ...(coverUrl ? { cover_url: coverUrl } : {}),
+            ...(thumbOffset ? { thumb_offset: thumbOffset } : {}),
           },
         },
       )
@@ -135,6 +139,8 @@ export class IngPublish extends Meta implements IIngPublish {
     value: url,
     caption,
     isCarouselItem,
+    coverUrl,
+    thumbOffset,
   }: saveMediaInMetaIngContainer): Promise<string> => {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
@@ -167,6 +173,8 @@ export class IngPublish extends Meta implements IIngPublish {
             ...(["REELS", "FEED"].includes(to) ? { media_type: "REELS" } : {}),
             ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
             ...(caption ? { caption } : {}),
+            ...(coverUrl ? { cover_url: coverUrl } : {}),
+            ...(thumbOffset ? { thumb_offset: thumbOffset } : {}),
           },
         },
       )
@@ -182,6 +190,8 @@ export class IngPublish extends Meta implements IIngPublish {
     value: path,
     caption,
     isCarouselItem,
+    coverUrl,
+    thumbOffset,
   }: saveMediaInMetaIngContainer): Promise<string> => {
     const arrayBuffer = await fs.promises.readFile(path);
 
@@ -214,6 +224,8 @@ export class IngPublish extends Meta implements IIngPublish {
           upload_type: "resumable",
           access_token: this.pageAccessToken,
           ...(caption ? { caption } : {}),
+          ...(coverUrl ? { cover_url: coverUrl } : {}),
+          ...(thumbOffset ? { thumb_offset: thumbOffset } : {}),
         },
       },
     );
@@ -270,7 +282,7 @@ export class IngPublish extends Meta implements IIngPublish {
   };
 
   private createUniquePost = async (post: CreatePost): Promise<string> => {
-    const { medias, caption } = post;
+    const { medias, caption, coverUrl, thumbOffset } = post;
 
     const containerId =
       medias[0].mediaType === "photo"
@@ -278,17 +290,23 @@ export class IngPublish extends Meta implements IIngPublish {
             value: medias[0].value,
             to: "FEED",
             caption,
+            coverUrl,
+            thumbOffset,
           })
         : medias[0].source === "url"
           ? await this.saveVideoInMetaContainerByUrl({
               to: "FEED",
               value: medias[0].value,
               caption,
+              coverUrl,
+              thumbOffset,
             })
           : await this.saveVideoInMetaContainerByPath({
               to: "FEED",
               value: medias[0].value,
               caption,
+              coverUrl,
+              thumbOffset,
             });
 
     await this.verifyStatusCodeContainerVideoDownload(containerId);

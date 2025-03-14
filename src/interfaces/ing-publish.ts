@@ -19,8 +19,10 @@ export type VideoMediaItem = {
 export type Medias = PhotoMediaItem | VideoMediaItem;
 
 export type CreatePost = {
-  caption?: string;
   medias: Medias[];
+  caption?: string;
+  coverUrl?: string;
+  thumbOffset?: number;
 };
 
 export type CreateStories = Medias;
@@ -35,4 +37,6 @@ export interface saveMediaInMetaIngContainer {
   to: "REELS" | "STORIES" | "FEED";
   isCarouselItem?: boolean;
   caption?: string;
+  coverUrl?: string;
+  thumbOffset?: number;
 }
