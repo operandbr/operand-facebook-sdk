@@ -4,6 +4,7 @@ import {
   CreateReels,
   CreateStories,
   IPagePublish,
+  SetThumbnailToReels,
   VideoMediaItem,
 } from "../../interfaces/page-publish";
 import {
@@ -73,6 +74,7 @@ export class PagePublish extends Meta implements IPagePublish {
   public async verifyVideoSpec(videoBuffer: Buffer): Promise<boolean> {
     const tempFilePath = path.resolve(
       __dirname,
+      "..",
       "..",
       "temp",
       `${Date.now()}.mp4`,
@@ -601,7 +603,9 @@ export class PagePublish extends Meta implements IPagePublish {
     }
   }
 
-  public async createReels(reel: CreateReels): Promise<string> {
+  public async createReels(
+    reel: CreateReels,
+  ): Promise<{ postId: string; videoId: string }> {
     const videoId =
       reel.source === "url"
         ? await this.saveVideoInMetaStorageMomentaryByUrl(reel.url, "reels")
@@ -624,6 +628,58 @@ export class PagePublish extends Meta implements IPagePublish {
       },
     );
 
-    return post_id;
+    return {
+      postId: post_id,
+      videoId,
+    };
+  }
+
+  public async setThumbnailToReels({
+    source,
+    value,
+    videoId,
+  }: SetThumbnailToReels) {
+    let buffer: Buffer;
+
+    if (source === "path") {
+      buffer = await fs.promises.readFile(value);
+    } else {
+      const response = await fetch(value);
+      buffer = Buffer.from(await response.arrayBuffer());
+    }
+
+    const { ext } = await FileType.fromBuffer(buffer);
+
+    const pathFile = path.resolve(
+      __dirname,
+      "..",
+      "..",
+      "temp",
+      `${new Date().getTime()}.${ext}`,
+    );
+
+    await fs.promises.writeFile(pathFile, buffer);
+
+    const fileStream = fs.createReadStream(pathFile);
+
+    const formData = new FormData();
+
+    formData.append("source", fileStream);
+
+    await this.api.post(`${videoId}/thumbnails`, formData, {
+      params: {
+        access_token: this.pageAccessToken,
+        is_preferred: true,
+      },
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    await fs.promises.unlink(pathFile);
+
+    return {
+      success: true,
+    };
   }
 }
