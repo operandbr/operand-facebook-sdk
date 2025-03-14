@@ -639,6 +639,8 @@ export class PagePublish extends Meta implements IPagePublish {
     value,
     videoId,
   }: SetThumbnailToReels) {
+    await fs.promises.mkdir(path.resolve(__dirname, "..", "..", "temp"));
+
     let buffer: Buffer;
 
     if (source === "path") {
