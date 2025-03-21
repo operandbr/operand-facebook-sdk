@@ -366,6 +366,8 @@ export class IngPublish extends Meta implements IIngPublish {
   };
 
   public async createPost(post: CreatePost): Promise<string> {
+    await this.createTempFolder();
+
     const { medias } = post;
 
     if (medias.length === 0) {
@@ -433,6 +435,8 @@ export class IngPublish extends Meta implements IIngPublish {
   }
 
   public async createStories(media: CreateStories): Promise<string> {
+    await this.createTempFolder();
+
     if (!media) {
       throw new OperandError("Media is required");
     }

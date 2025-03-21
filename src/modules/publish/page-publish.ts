@@ -504,6 +504,8 @@ export class PagePublish extends Meta implements IPagePublish {
   }
 
   public async createPost(post: CreatePost): Promise<string> {
+    await this.createTempFolder();
+
     const { message, publishNow, datePublish, mediaType } = post;
 
     if (!publishNow && !datePublish) {
@@ -594,6 +596,8 @@ export class PagePublish extends Meta implements IPagePublish {
   }
 
   public async createStories(story: CreateStories): Promise<string> {
+    await this.createTempFolder();
+
     if (story.mediaType === "photo") {
       return this.createPhotoStory(story);
     } else if (story.mediaType === "video") {
@@ -606,6 +610,8 @@ export class PagePublish extends Meta implements IPagePublish {
   public async createReels(
     reel: CreateReels,
   ): Promise<{ postId: string; videoId: string }> {
+    await this.createTempFolder();
+
     const videoId =
       reel.source === "url"
         ? await this.saveVideoInMetaStorageMomentaryByUrl(reel.url, "reels")
@@ -639,10 +645,6 @@ export class PagePublish extends Meta implements IPagePublish {
     value,
     videoId,
   }: SetThumbnailToReels) {
-    await fs.promises.mkdir(path.resolve(__dirname, "..", "..", "temp"), {
-      recursive: true,
-    });
-
     let buffer: Buffer;
 
     if (source === "path") {
