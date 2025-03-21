@@ -445,4 +445,15 @@ export class IngPublish extends Meta implements IIngPublish {
 
     return this.createVideoStory(media);
   }
+
+  public async getLinkPost(id: string): Promise<string> {
+    return (
+      await this.api.get<{ permalink: string; id: string }>(`${id}`, {
+        params: {
+          fields: "permalink",
+          access_token: this.pageAccessToken,
+        },
+      })
+    ).data.permalink;
+  }
 }

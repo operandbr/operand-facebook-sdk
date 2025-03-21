@@ -30,6 +30,7 @@ export type CreateStories = Medias;
 export interface IIngPublish {
   createPost(data: CreatePost): Promise<string>;
   createStories(data: CreateStories): Promise<string>;
+  getLinkPost(id: string): Promise<string>;
 }
 
 export interface saveMediaInMetaIngContainer {
