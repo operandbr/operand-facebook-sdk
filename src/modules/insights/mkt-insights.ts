@@ -11,11 +11,11 @@ export class MktInsights extends Meta {
     this.adAAccountId = constructorMkt.adAAccountId;
   }
 
-  public async getDayPaidImpressions(startDate: Date, endDate: Date) {
+  public async getDayPaidReaches(startDate: Date, endDate: Date) {
     const response = (
       await this.api.get<AdMetricsResponse>(`/${this.adAAccountId}/insights`, {
         params: {
-          fields: "impressions",
+          fields: "reach",
           access_token: this.pageAccessToken,
           time_increment: "1",
           since: Math.floor(startOfDay(startDate).getTime() / 1000),
@@ -30,7 +30,7 @@ export class MktInsights extends Meta {
 
     for (let i = 0; i <= days; i++) {
       result.push({
-        value: response[i]?.impressions ?? 0,
+        value: response[i]?.reach ?? 0,
       });
     }
 
