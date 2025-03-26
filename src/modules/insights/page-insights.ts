@@ -84,11 +84,11 @@ export class PageInsights extends PageComments {
     ).data.data[0].values;
   }
 
-  public async getDayAllImpressions(startDate: Date, endDate: Date) {
+  public async getDayAllImpressionsUnique(startDate: Date, endDate: Date) {
     return (
       await this.api.get<GetInsightsResponse>(`/${this.pageId}/insights`, {
         params: {
-          metric: "page_impressions",
+          metric: "page_impressions_unique",
           period: "day",
           since: Math.floor(startOfDay(startDate).getTime() / 1000),
           until: Math.floor(endOfDay(endDate).getTime() / 1000),
@@ -98,11 +98,11 @@ export class PageInsights extends PageComments {
     ).data.data[0].values;
   }
 
-  public async getDayPaidImpressions(startDate: Date, endDate: Date) {
+  public async getDayPaidImpressionsUnique(startDate: Date, endDate: Date) {
     return (
       await this.api.get<GetInsightsResponse>(`/${this.pageId}/insights`, {
         params: {
-          metric: "page_impressions_paid",
+          metric: "page_impressions_paid_unique",
           period: "day",
           since: Math.floor(startOfDay(startDate).getTime() / 1000),
           until: Math.floor(endOfDay(endDate).getTime() / 1000),

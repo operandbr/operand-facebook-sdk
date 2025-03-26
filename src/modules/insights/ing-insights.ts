@@ -136,7 +136,7 @@ export class IngInsights extends IngComments {
     return result;
   }
 
-  public async getDayAllImpressions(startDate: Date, endDate: Date) {
+  public async getDayAllReaches(startDate: Date, endDate: Date) {
     const values: { value: number; end_time?: string }[] = [];
 
     let currentStart = startDate;
@@ -154,7 +154,7 @@ export class IngInsights extends IngComments {
         `/${this.ingId}/insights`,
         {
           params: {
-            metric: "impressions",
+            metric: "reach",
             period: "day",
             since,
             until,
