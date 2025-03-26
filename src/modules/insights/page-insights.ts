@@ -39,11 +39,28 @@ export class PageInsights extends PageComments {
     ).data.followers_count;
   }
 
-  public async getDayFollowersByDateInterval(startDate: Date, endDate: Date) {
+  public async getDayTotalFollowersByDateInterval(
+    startDate: Date,
+    endDate: Date,
+  ) {
     return (
       await this.api.get<GetInsightsResponse>(`/${this.pageId}/insights`, {
         params: {
           metric: "page_follows",
+          period: "day",
+          since: Math.floor(startOfDay(startDate).getTime() / 1000),
+          until: Math.floor(endOfDay(endDate).getTime() / 1000),
+          access_token: this.pageAccessToken,
+        },
+      })
+    ).data.data[0].values;
+  }
+
+  public async getDayFollowersByDateInterval(startDate: Date, endDate: Date) {
+    return (
+      await this.api.get<GetInsightsResponse>(`/${this.pageId}/insights`, {
+        params: {
+          metric: "page_daily_follows_unique",
           period: "day",
           since: Math.floor(startOfDay(startDate).getTime() / 1000),
           until: Math.floor(endOfDay(endDate).getTime() / 1000),
