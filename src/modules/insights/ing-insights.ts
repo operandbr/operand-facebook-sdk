@@ -8,7 +8,9 @@ import {
   addDays,
   differenceInDays,
   endOfDay,
-  startOfDay,
+  getDate,
+  getMonth,
+  getYear,
   subDays,
 } from "date-fns";
 import { IngComments } from "../comments/ing-comments";
@@ -16,6 +18,13 @@ import { IngComments } from "../comments/ing-comments";
 export class IngInsights extends IngComments {
   constructor(constructorIng: ConstructorIng) {
     super(constructorIng);
+  }
+
+  private generateSinceAndUntil(startDate: Date, endDate: Date) {
+    return {
+      since: `${getYear(startDate)}-${getMonth(startDate) + 1}-${getDate(startDate)}`,
+      until: `${getYear(endDate)}-${getMonth(endDate) + 1}-${getDate(endDate) + 1}`,
+    };
   }
 
   private async generateWhileLoopToGetLikesAndCommentsAndShares(
@@ -30,9 +39,6 @@ export class IngInsights extends IngComments {
     while (value.length !== differenceInDays(endDate, startDate) + 1) {
       const daysToAdd = 1;
 
-      const since = startOfDay(currentStart);
-      const until = endOfDay(currentStart);
-
       const response = await this.api.get<GetInsightsResponse>(
         `/${this.ingId}/insights`,
         {
@@ -40,8 +46,7 @@ export class IngInsights extends IngComments {
             metric,
             period: "day",
             metric_type: "total_value",
-            since,
-            until,
+            ...this.generateSinceAndUntil(startDate, endDate),
             access_token: this.pageAccessToken,
           },
         },
@@ -67,8 +72,8 @@ export class IngInsights extends IngComments {
   }
 
   public async getDayFollowersByTheLast30Days() {
-    const endDate = endOfDay(new Date());
-    const startDate = subDays(endDate, 30);
+    const endDate = endOfDay(subDays(new Date(), 1));
+    const startDate = subDays(endDate, 29);
 
     const response = await this.api.get<GetInsightsResponse>(
       `/${this.ingId}/insights`,
@@ -76,8 +81,7 @@ export class IngInsights extends IngComments {
         params: {
           metric: "follower_count",
           period: "day",
-          since: Math.floor(startDate.getTime() / 1000),
-          until: Math.floor(endDate.getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
       },
@@ -101,8 +105,8 @@ export class IngInsights extends IngComments {
   }
 
   public async getDayUnFollowersByTheLast30Days() {
-    const endDate = endOfDay(new Date());
-    const startDate = subDays(endDate, 30);
+    const endDate = endOfDay(subDays(new Date(), 1));
+    const startDate = subDays(endDate, 29);
 
     const response =
       await this.api.get<GetInsightsPageFollowersAndUnFollowersResponse>(
@@ -112,8 +116,7 @@ export class IngInsights extends IngComments {
             metric: "follows_and_unfollows",
             metric_type: "total_value",
             period: "day",
-            since: Math.floor(startDate.getTime() / 1000),
-            until: Math.floor(endDate.getTime() / 1000),
+            ...this.generateSinceAndUntil(startDate, endDate),
             access_token: this.pageAccessToken,
           },
         },
@@ -136,6 +139,26 @@ export class IngInsights extends IngComments {
     return result;
   }
 
+  public async getDayAllViews(day: Date) {
+    const since = day;
+    const until = addDays(since, 1);
+
+    const response = await this.api.get<GetInsightsResponse>(
+      `/${this.ingId}/insights`,
+      {
+        params: {
+          metric: "views",
+          period: "day",
+          metric_type: "total_value",
+          ...this.generateSinceAndUntil(since, until),
+          access_token: this.pageAccessToken,
+        },
+      },
+    );
+
+    return response.data.data[0].total_value.value || 0;
+  }
+
   public async getDayAllReaches(startDate: Date, endDate: Date) {
     const values: { value: number; end_time?: string }[] = [];
 
@@ -156,8 +179,7 @@ export class IngInsights extends IngComments {
           params: {
             metric: "reach",
             period: "day",
-            since,
-            until,
+            ...this.generateSinceAndUntil(since, until),
             access_token: this.pageAccessToken,
           },
         },

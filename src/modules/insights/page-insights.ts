@@ -6,7 +6,16 @@ import {
   PostComment,
   GetPostCommentsResponse,
 } from "../../interfaces/meta-response";
-import { addDays, endOfDay, isSameDay, startOfDay, subDays } from "date-fns";
+import {
+  addDays,
+  endOfDay,
+  getDate,
+  getMonth,
+  getYear,
+  isSameDay,
+  startOfDay,
+  subDays,
+} from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { PageComments } from "../comments/page-comments";
 
@@ -39,6 +48,13 @@ export class PageInsights extends PageComments {
     ).data.followers_count;
   }
 
+  private generateSinceAndUntil(startDate: Date, endDate: Date) {
+    return {
+      since: `${getYear(startDate)}-${getMonth(startDate) + 1}-${getDate(startDate)}`,
+      until: `${getYear(endDate)}-${getMonth(endDate) + 1}-${getDate(endDate) + 1}`,
+    };
+  }
+
   public async getDayTotalFollowersByDateInterval(
     startDate: Date,
     endDate: Date,
@@ -48,8 +64,7 @@ export class PageInsights extends PageComments {
         params: {
           metric: "page_follows",
           period: "day",
-          since: Math.floor(startOfDay(startDate).getTime() / 1000),
-          until: Math.floor(endOfDay(endDate).getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
       })
@@ -62,8 +77,7 @@ export class PageInsights extends PageComments {
         params: {
           metric: "page_daily_follows_unique",
           period: "day",
-          since: Math.floor(startOfDay(startDate).getTime() / 1000),
-          until: Math.floor(endOfDay(endDate).getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
       })
@@ -76,8 +90,20 @@ export class PageInsights extends PageComments {
         params: {
           metric: "page_daily_unfollows_unique",
           period: "day",
-          since: Math.floor(startOfDay(startDate).getTime() / 1000),
-          until: Math.floor(endOfDay(endDate).getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
+          access_token: this.pageAccessToken,
+        },
+      })
+    ).data.data[0].values;
+  }
+
+  public async getDayAllImpressions(startDate: Date, endDate: Date) {
+    return (
+      await this.api.get<GetInsightsResponse>(`/${this.pageId}/insights`, {
+        params: {
+          metric: "page_impressions",
+          period: "day",
+          ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
       })
@@ -90,8 +116,7 @@ export class PageInsights extends PageComments {
         params: {
           metric: "page_impressions_unique",
           period: "day",
-          since: Math.floor(startOfDay(startDate).getTime() / 1000),
-          until: Math.floor(endOfDay(endDate).getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
       })
@@ -104,8 +129,7 @@ export class PageInsights extends PageComments {
         params: {
           metric: "page_impressions_paid_unique",
           period: "day",
-          since: Math.floor(startOfDay(startDate).getTime() / 1000),
-          until: Math.floor(endOfDay(endDate).getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
       })
@@ -119,8 +143,7 @@ export class PageInsights extends PageComments {
         {
           params: {
             period: "day",
-            since: Math.floor(startOfDay(startDate).getTime() / 1000),
-            until: Math.floor(endOfDay(endDate).getTime() / 1000),
+            ...this.generateSinceAndUntil(startDate, endDate),
             access_token: this.pageAccessToken,
           },
         },
