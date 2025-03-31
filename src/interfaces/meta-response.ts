@@ -255,3 +255,14 @@ export interface AdMetrics {
 export interface AdMetricsResponse {
   data: AdMetrics[];
 }
+
+export interface GetStoriesPageResponse {
+  data: {
+    post_id: string;
+    status: string;
+    creation_time: string;
+    media_type: string;
+    media_id: string;
+    url: string;
+  }[];
+}

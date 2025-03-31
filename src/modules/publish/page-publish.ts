@@ -17,6 +17,7 @@ import {
   CreatePhotoStoriesResponse,
   CreateStartVideoUploadResponse,
   CreateFinishVideoUploadResponse,
+  GetStoriesPageResponse,
 } from "../../interfaces/meta-response";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
@@ -687,5 +688,11 @@ export class PagePublish extends Meta implements IPagePublish {
     return {
       success: true,
     };
+  }
+
+  public async getLinkStories(id: string) {
+    return (
+      await this.api.get<GetStoriesPageResponse>(`${this.pageId}/`)
+    ).data.data.find((data) => data.post_id === id).url;
   }
 }
