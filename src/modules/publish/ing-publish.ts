@@ -7,7 +7,6 @@ import {
   saveMediaInMetaIngContainer,
   VideoMediaItem,
 } from "../../interfaces/ing-publish";
-import { Meta } from "../meta";
 import { OperandError } from "../../error/operand-error";
 import {
   GetStatusMediaContainerDownloadResponse,
@@ -16,8 +15,9 @@ import {
 } from "../../interfaces/meta-response";
 import * as FileType from "file-type";
 import * as fs from "node:fs";
+import { MetaUtils } from "../utils/meta-utils";
 
-export class IngPublish extends Meta implements IIngPublish {
+export class IngPublish extends MetaUtils implements IIngPublish {
   protected readonly ingId: string;
 
   constructor({ apiVersion, ingId, pageAccessToken }: ConstructorIng) {

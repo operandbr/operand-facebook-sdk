@@ -26,9 +26,9 @@ import { isAfter, isBefore, addMinutes, addMonths } from "date-fns";
 import { OperandError } from "../../error/operand-error";
 import * as ffmpeg from "fluent-ffmpeg";
 import * as path from "node:path";
-import { Meta } from "../meta";
+import { MetaUtils } from "../utils/meta-utils";
 
-export class PagePublish extends Meta implements IPagePublish {
+export class PagePublish extends MetaUtils implements IPagePublish {
   protected readonly pageId: string;
 
   constructor({ pageAccessToken, pageId, apiVersion }: ConstructorPage) {
