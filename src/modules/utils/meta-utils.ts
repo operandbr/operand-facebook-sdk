@@ -1,5 +1,5 @@
 import { Meta } from "../meta";
-import { ConstructorMain } from "@/interfaces/meta";
+import { ConstructorMain } from "../../interfaces/meta";
 
 export class MetaUtils extends Meta {
   constructor(data: ConstructorMain) {
