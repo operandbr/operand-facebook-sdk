@@ -175,7 +175,9 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     fs.promises.unlink(tempFilePath);
 
     if (textResponse !== "ok") {
-      throw new OperandError(textResponse);
+      throw new OperandError({
+        message: textResponse,
+      });
     }
 
     return true;
@@ -212,17 +214,22 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     const fileType = await FileType.fromBuffer(arrayBuffer);
 
     if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
+      throw new OperandError({
+        message: "Impossible to get the file type of file.",
+      });
     }
 
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
-      throw new OperandError(
-        "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
-      );
+      throw new OperandError({
+        message:
+          "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+      });
     }
 
     if (!(await this.verifyPhotoSize(Buffer.from(arrayBuffer), true))) {
-      throw new OperandError("The photo must be less or equal to 4MB.");
+      throw new OperandError({
+        message: "The photo must be less or equal to 4MB.",
+      });
     }
 
     return (
@@ -238,17 +245,22 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     const fileType = await FileType.fromFile(path);
 
     if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
+      throw new OperandError({
+        message: "Impossible to get the file type of file.",
+      });
     }
 
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
-      throw new OperandError(
-        "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
-      );
+      throw new OperandError({
+        message:
+          "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+      });
     }
 
     if (!(await this.verifyPhotoSize(path, false))) {
-      throw new OperandError("The photo must be less or equal to 4MB.");
+      throw new OperandError({
+        message: "The photo must be less or equal to 4MB.",
+      });
     }
 
     const fileStream = fs.createReadStream(path);
@@ -280,13 +292,16 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     const fileType = await FileType.fromBuffer(arrayBuffer);
 
     if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
+      throw new OperandError({
+        message: "Impossible to get the file type of file.",
+      });
     }
 
     if (!this.fileTypesPermitted("video", fileType.ext)) {
-      throw new OperandError(
-        "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
-      );
+      throw new OperandError({
+        message:
+          "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+      });
     }
 
     // IN FUTURE, UNCOMMENT THIS LINE
@@ -325,13 +340,15 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     const fileType = await FileType.fromBuffer(arrayBuffer);
 
     if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
+      throw new OperandError({
+        message: "Impossible to get the file type of file.",
+      });
     }
 
     if (!this.fileTypesPermitted("video", fileType.ext)) {
-      throw new OperandError(
-        "This file type is not permitted. File types permitted: mp4.",
-      );
+      throw new OperandError({
+        message: "This file type is not permitted. File types permitted: mp4.",
+      });
     }
 
     // IN FUTURE, UNCOMMENT THIS LINE
@@ -393,13 +410,20 @@ export class PagePublish extends MetaUtils implements IPagePublish {
   private async uploadPhotos(
     photos: Array<{ source: string; value: string }>,
   ): Promise<string[]> {
-    return Promise.all(
-      photos.map((photo) =>
-        photo.source === "url"
-          ? this.savePhotoInMetaStorageByUrl(photo.value)
-          : this.savePhotoInMetaStorageByPath(photo.value),
-      ),
-    );
+    try {
+      return Promise.all(
+        photos.map((photo) =>
+          photo.source === "url"
+            ? this.savePhotoInMetaStorageByUrl(photo.value)
+            : this.savePhotoInMetaStorageByPath(photo.value),
+        ),
+      );
+    } catch (error) {
+      throw new OperandError({
+        message: "Error when upload photos",
+        error,
+      });
+    }
   }
 
   private async createTextPost(
@@ -407,20 +431,27 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     publishNow: boolean,
     datePublish?: Date,
   ): Promise<string> {
-    const newPost = (
-      await this.api.post<CreatePagePostResponse>(`/${this.pageId}/feed`, {
-        access_token: this.pageAccessToken,
-        message,
-        ...(!publishNow && {
-          scheduled_publish_time: Math.floor(
-            new Date(datePublish).getTime() / 1000,
-          ),
-          published: publishNow,
-        }),
-      })
-    ).data;
+    try {
+      const newPost = (
+        await this.api.post<CreatePagePostResponse>(`/${this.pageId}/feed`, {
+          access_token: this.pageAccessToken,
+          message,
+          ...(!publishNow && {
+            scheduled_publish_time: Math.floor(
+              new Date(datePublish).getTime() / 1000,
+            ),
+            published: publishNow,
+          }),
+        })
+      ).data;
 
-    return newPost.post_id || newPost.id;
+      return newPost.post_id || newPost.id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error creating post text ",
+        error,
+      });
+    }
   }
 
   private async createPhotosPost(
@@ -429,23 +460,30 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     publishNow: boolean,
     datePublish?: Date,
   ): Promise<string> {
-    const newPost = (
-      await this.api.post<CreatePagePostResponse>(`/${this.pageId}/feed`, {
-        access_token: this.pageAccessToken,
-        message,
-        ...(!publishNow && {
-          scheduled_publish_time: Math.floor(
-            new Date(datePublish).getTime() / 1000,
-          ),
-          published: publishNow,
-        }),
-        attached_media: mediaIds.map((id) => ({
-          media_fbid: id,
-        })),
-      })
-    ).data;
+    try {
+      const newPost = (
+        await this.api.post<CreatePagePostResponse>(`/${this.pageId}/feed`, {
+          access_token: this.pageAccessToken,
+          message,
+          ...(!publishNow && {
+            scheduled_publish_time: Math.floor(
+              new Date(datePublish).getTime() / 1000,
+            ),
+            published: publishNow,
+          }),
+          attached_media: mediaIds.map((id) => ({
+            media_fbid: id,
+          })),
+        })
+      ).data;
 
-    return newPost.post_id || newPost.id;
+      return newPost.post_id || newPost.id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error when create photos post",
+        error,
+      });
+    }
   }
 
   private async createVideoPost(
@@ -454,54 +492,64 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     publishNow: boolean,
     datePublish?: Date,
   ): Promise<string> {
-    let arrayBuffer: ArrayBuffer;
+    try {
+      let arrayBuffer: ArrayBuffer;
 
-    if (video.source === "url") {
-      const response = await fetch(video.value);
-      arrayBuffer = await response.arrayBuffer();
-    } else {
-      arrayBuffer = await fs.promises.readFile(video.value);
-    }
+      if (video.source === "url") {
+        const response = await fetch(video.value);
+        arrayBuffer = await response.arrayBuffer();
+      } else {
+        arrayBuffer = await fs.promises.readFile(video.value);
+      }
 
-    const fileType = await FileType.fromBuffer(arrayBuffer);
+      const fileType = await FileType.fromBuffer(arrayBuffer);
 
-    if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
-    }
+      if (!fileType) {
+        throw new OperandError({
+          message: "Impossible to get the file type of file.",
+        });
+      }
 
-    if (!this.fileTypesPermitted("video", fileType.ext)) {
-      throw new OperandError(
-        "This file type is not permitted. File types permitted: mp4.",
-      );
-    }
+      if (!this.fileTypesPermitted("video", fileType.ext)) {
+        throw new OperandError({
+          message:
+            "This file type is not permitted. File types permitted: mp4.",
+        });
+      }
 
-    const formData = new FormData();
-    formData.append("description", message);
-    formData.append(
-      video.source === "url" ? "file_url" : "source",
-      video.source === "url" ? video.value : fs.createReadStream(video.value),
-    );
-    formData.append("access_token", this.pageAccessToken);
-
-    if (!publishNow) {
-      formData.append("published", "false");
+      const formData = new FormData();
+      formData.append("description", message);
       formData.append(
-        "scheduled_publish_time",
-        Math.floor(new Date(datePublish).getTime() / 1000),
+        video.source === "url" ? "file_url" : "source",
+        video.source === "url" ? video.value : fs.createReadStream(video.value),
       );
-    }
+      formData.append("access_token", this.pageAccessToken);
 
-    const { data } = await this.apiVideo.post<SaveMediaStorageResponse>(
-      `/${this.pageId}/videos`,
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(),
+      if (!publishNow) {
+        formData.append("published", "false");
+        formData.append(
+          "scheduled_publish_time",
+          Math.floor(new Date(datePublish).getTime() / 1000),
+        );
+      }
+
+      const { data } = await this.apiVideo.post<SaveMediaStorageResponse>(
+        `/${this.pageId}/videos`,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
         },
-      },
-    );
+      );
 
-    return data.id;
+      return data.id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error when create video post",
+        error,
+      });
+    }
   }
 
   public async createPost(post: CreatePost): Promise<string> {
@@ -510,15 +558,17 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     const { message, publishNow, datePublish, mediaType } = post;
 
     if (!publishNow && !datePublish) {
-      throw new OperandError(
-        "You must provide the datePublish if you don't want to publish now.",
-      );
+      throw new OperandError({
+        message:
+          "You must provide the datePublish if you don't want to publish now.",
+      });
     }
 
     if (!publishNow && this.validatePublishDate(new Date(datePublish))) {
-      throw new OperandError(
-        "The datePublish must be between 10 minutes from now and 6 months from now.",
-      );
+      throw new OperandError({
+        message:
+          "The datePublish must be between 10 minutes from now and 6 months from now.",
+      });
     }
 
     if (!mediaType && message) {
@@ -534,7 +584,9 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       return this.createVideoPost(post.video, message, publishNow, datePublish);
     }
 
-    throw new OperandError("Invalid parameters.");
+    throw new OperandError({
+      message: "Invalid parameters.",
+    });
   }
 
   public async updatePost(postId: string, message: string): Promise<boolean> {

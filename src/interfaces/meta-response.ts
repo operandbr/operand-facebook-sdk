@@ -266,3 +266,12 @@ export interface GetStoriesPageResponse {
     url: string;
   }[];
 }
+
+export interface MetaError {
+  error: {
+    message: string;
+    type: string;
+    code: number;
+    fbtrace_id: string;
+  };
+}

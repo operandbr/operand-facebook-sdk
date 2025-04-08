@@ -62,7 +62,9 @@ export class IngPublish extends MetaUtils implements IIngPublish {
       }
 
       if (status === "ERROR") {
-        throw new OperandError("Error on upload media");
+        throw new OperandError({
+          message: "Error on upload media",
+        });
       }
 
       if (status === "FINISHED") {
@@ -97,17 +99,21 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     const fileType = await FileType.fromBuffer(arrayBuffer);
 
     if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
+      throw new OperandError({
+        message: "Impossible to get the file type of file.",
+      });
     }
 
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
-      throw new OperandError(
-        "This file type is not permitted. File types permitted: jpeg.",
-      );
+      throw new OperandError({
+        message: "This file type is not permitted. File types permitted: jpeg.",
+      });
     }
 
     if (!(await this.verifyPhotoSize(Buffer.from(arrayBuffer), true))) {
-      throw new OperandError("The photo must be less or equal to 8MB.");
+      throw new OperandError({
+        message: "The photo must be less or equal to 8MB.",
+      });
     }
 
     const containerId = (
@@ -148,17 +154,21 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     const fileType = await FileType.fromBuffer(arrayBuffer);
 
     if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
+      throw new OperandError({
+        message: "Impossible to get the file type of file.",
+      });
     }
 
     if (!["mp4", "mov"].includes(fileType.ext)) {
-      throw new OperandError(
-        "Invalid file type. File types permitted: mp4, mov",
-      );
+      throw new OperandError({
+        message: "Invalid file type. File types permitted: mp4, mov",
+      });
     }
 
     if (!(await this.verifyVideoSize(Buffer.from(arrayBuffer), true))) {
-      throw new OperandError("The video must be less or equal to 1GB.");
+      throw new OperandError({
+        message: "The video must be less or equal to 1GB.",
+      });
     }
 
     const containerId = (
@@ -198,17 +208,21 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     const fileType = await FileType.fromBuffer(arrayBuffer);
 
     if (!fileType) {
-      throw new OperandError("Impossible to get the file type of file.");
+      throw new OperandError({
+        message: "Impossible to get the file type of file.",
+      });
     }
 
     if (!["mp4", "mov"].includes(fileType.ext)) {
-      throw new OperandError(
-        "Invalid file type. File types permitted: mp4, mov",
-      );
+      throw new OperandError({
+        message: "Invalid file type. File types permitted: mp4, mov",
+      });
     }
 
     if (!(await this.verifyVideoSize(path, false))) {
-      throw new OperandError("The video must be less or equal to 1GB.");
+      throw new OperandError({
+        message: "The video must be less or equal to 1GB.",
+      });
     }
 
     const {
@@ -241,7 +255,9 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     });
 
     if (sessionStart.status !== 200) {
-      throw new OperandError("Error on upload video");
+      throw new OperandError({
+        message: "Error on upload video",
+      });
     }
 
     await this.verifyStatusCodeContainerVideoDownload(id);
@@ -371,11 +387,15 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     const { medias } = post;
 
     if (medias.length === 0) {
-      throw new OperandError("Medias is required");
+      throw new OperandError({
+        message: "Medias is required",
+      });
     }
 
     if (medias.length > 10) {
-      throw new OperandError("Medias must be less than or equal to 10");
+      throw new OperandError({
+        message: "Medias must be less than or equal to 10",
+      });
     }
 
     if (medias.length === 1) {
@@ -438,7 +458,9 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     await this.createTempFolder();
 
     if (!media) {
-      throw new OperandError("Media is required");
+      throw new OperandError({
+        message: "Media is required",
+      });
     }
 
     if (media.mediaType === "photo") return this.createPhotoStory(media);
