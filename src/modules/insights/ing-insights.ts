@@ -160,37 +160,18 @@ export class IngInsights extends IngComments {
   }
 
   public async getDayAllReaches(startDate: Date, endDate: Date) {
-    const values: { value: number; end_time?: string }[] = [];
-
-    let currentStart = startDate;
-
-    while (values.length !== differenceInDays(endDate, startDate) + 1) {
-      const daysToAdd = Math.min(
-        30,
-        differenceInDays(endDate, currentStart) + 1,
-      );
-
-      const since = currentStart;
-      const until = addDays(since, daysToAdd);
-
-      const response = await this.api.get<GetInsightsResponse>(
-        `/${this.ingId}/insights`,
-        {
-          params: {
-            metric: "reach",
-            period: "day",
-            ...this.generateSinceAndUntil(since, until),
-            access_token: this.pageAccessToken,
-          },
+    const response = (
+      await this.api.get<GetInsightsResponse>(`/${this.ingId}/insights`, {
+        params: {
+          metric: "reach",
+          period: "day",
+          ...this.generateSinceAndUntil(startDate, endDate),
+          access_token: this.pageAccessToken,
         },
-      );
+      })
+    ).data.data[0].values;
 
-      values.push(...response.data.data[0].values);
-
-      currentStart = addDays(currentStart, daysToAdd);
-    }
-
-    return values;
+    return response;
   }
 
   public async getDayAllLikesInAllPosts(startDate: Date, endDate: Date) {

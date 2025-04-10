@@ -170,7 +170,7 @@ export interface GetFollowersCountResponseCurrent {
   id: string;
 }
 
-interface Insights<T> {
+export interface Insights<T> {
   name: string;
   period: string;
   values: T;
