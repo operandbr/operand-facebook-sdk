@@ -269,33 +269,55 @@ export class IngPublish extends MetaUtils implements IIngPublish {
   private uploadPhotos = async (
     photos: PhotoMediaItem[],
   ): Promise<string[]> => {
-    return Promise.all(
-      photos.map(async (photo) => {
-        return this.savePhotoInMetaContainerByUrl({
-          value: photo.value,
-          to: "FEED",
-          isCarouselItem: true,
-        });
-      }),
-    );
+    try {
+      const medias = [];
+
+      for (const photo of photos) {
+        medias.push(
+          await this.savePhotoInMetaContainerByUrl({
+            value: photo.value,
+            to: "FEED",
+            isCarouselItem: true,
+          }),
+        );
+      }
+
+      return medias;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error when upload photos",
+        error,
+      });
+    }
   };
 
   private uploadVideos = async (
     videos: VideoMediaItem[],
   ): Promise<string[]> => {
-    return Promise.all(
-      videos.map(async (video) => {
+    try {
+      const medias = [];
+
+      for (const video of videos) {
         const data = {
           to: "FEED" as const,
           value: video.value,
           isCarouselItem: true,
         };
 
-        return video.source === "url"
-          ? this.saveVideoInMetaContainerByUrl(data)
-          : this.saveVideoInMetaContainerByPath(data);
-      }),
-    );
+        medias.push(
+          video.source === "url"
+            ? await this.saveVideoInMetaContainerByUrl(data)
+            : await this.saveVideoInMetaContainerByPath(data),
+        );
+      }
+
+      return medias;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error when upload videos",
+        error,
+      });
+    }
   };
 
   private createUniquePost = async (post: CreatePost): Promise<string> => {

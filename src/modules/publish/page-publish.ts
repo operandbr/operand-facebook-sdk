@@ -409,13 +409,17 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     photos: Array<{ source: string; value: string }>,
   ): Promise<string[]> {
     try {
-      return Promise.all(
-        photos.map((photo) =>
+      const medias = [];
+
+      for (const photo of photos) {
+        medias.push(
           photo.source === "url"
-            ? this.savePhotoInMetaStorageByUrl(photo.value)
-            : this.savePhotoInMetaStorageByPath(photo.value),
-        ),
-      );
+            ? await this.savePhotoInMetaStorageByUrl(photo.value)
+            : await this.savePhotoInMetaStorageByPath(photo.value),
+        );
+      }
+
+      return medias;
     } catch (error) {
       throw new OperandError({
         message: "Error when upload photos",
