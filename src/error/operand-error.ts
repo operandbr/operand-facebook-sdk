@@ -6,7 +6,7 @@ export class OperandError {
   private code_private: number;
 
   parseMetaError(...data: any) {
-    let { error } = data;
+    let { error } = data[0];
     const { err } = data;
 
     error = error || err;
@@ -183,8 +183,9 @@ export class OperandError {
           break;
 
         default:
-          this.message_private = "Error communicating with the target";
-          this.code_private = 500;
+          this.message_private =
+            data.error.message || "Error communicating with the target";
+          this.code_private = data.error.code || 500;
       }
     } else {
       this.message_private = "Unknown error occurred";

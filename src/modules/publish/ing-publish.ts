@@ -321,87 +321,101 @@ export class IngPublish extends MetaUtils implements IIngPublish {
   };
 
   private createUniquePost = async (post: CreatePost): Promise<string> => {
-    const { medias, caption, coverUrl, thumbOffset } = post;
+    try {
+      const { medias, caption, coverUrl, thumbOffset } = post;
 
-    const containerId =
-      medias[0].mediaType === "photo"
-        ? await this.savePhotoInMetaContainerByUrl({
-            value: medias[0].value,
-            to: "FEED",
-            caption,
-            coverUrl,
-            thumbOffset,
-          })
-        : medias[0].source === "url"
-          ? await this.saveVideoInMetaContainerByUrl({
-              to: "FEED",
+      const containerId =
+        medias[0].mediaType === "photo"
+          ? await this.savePhotoInMetaContainerByUrl({
               value: medias[0].value,
+              to: "FEED",
               caption,
               coverUrl,
               thumbOffset,
             })
-          : await this.saveVideoInMetaContainerByPath({
-              to: "FEED",
-              value: medias[0].value,
-              caption,
-              coverUrl,
-              thumbOffset,
-            });
+          : medias[0].source === "url"
+            ? await this.saveVideoInMetaContainerByUrl({
+                to: "FEED",
+                value: medias[0].value,
+                caption,
+                coverUrl,
+                thumbOffset,
+              })
+            : await this.saveVideoInMetaContainerByPath({
+                to: "FEED",
+                value: medias[0].value,
+                caption,
+                coverUrl,
+                thumbOffset,
+              });
 
-    await this.verifyStatusCodeContainerVideoDownload(containerId);
+      await this.verifyStatusCodeContainerVideoDownload(containerId);
 
-    return (
-      await this.api.post<SaveMediaStorageResponse>(
-        `/${this.ingId}/media_publish`,
-        undefined,
-        {
-          params: {
-            creation_id: containerId,
-            access_token: this.pageAccessToken,
+      return (
+        await this.api.post<SaveMediaStorageResponse>(
+          `/${this.ingId}/media_publish`,
+          undefined,
+          {
+            params: {
+              creation_id: containerId,
+              access_token: this.pageAccessToken,
+            },
           },
-        },
-      )
-    ).data.id;
+        )
+      ).data.id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error when upload create unique post",
+        error,
+      });
+    }
   };
 
   private createCarrouselPost = async (post: CreatePost): Promise<string> => {
-    const { caption, medias } = post;
+    try {
+      const { caption, medias } = post;
 
-    const photoIds = await this.uploadPhotos(
-      medias.filter((m) => m.mediaType === "photo"),
-    );
+      const photoIds = await this.uploadPhotos(
+        medias.filter((m) => m.mediaType === "photo"),
+      );
 
-    const videoIds = await this.uploadVideos(
-      medias.filter((m) => m.mediaType === "video"),
-    );
+      const videoIds = await this.uploadVideos(
+        medias.filter((m) => m.mediaType === "video"),
+      );
 
-    const media = [...photoIds, ...videoIds];
+      const media = [...photoIds, ...videoIds];
 
-    const creationId = (
-      await this.api.post<SaveMediaStorageResponse>(
-        `${this.ingId}/media`,
-        undefined,
-        {
-          params: {
-            access_token: this.pageAccessToken,
-            caption,
-            children: media.join(","),
-            media_type: "CAROUSEL",
+      const creationId = (
+        await this.api.post<SaveMediaStorageResponse>(
+          `${this.ingId}/media`,
+          undefined,
+          {
+            params: {
+              access_token: this.pageAccessToken,
+              caption,
+              children: media.join(","),
+              media_type: "CAROUSEL",
+            },
           },
-        },
-      )
-    ).data.id;
+        )
+      ).data.id;
 
-    await this.verifyStatusCodeContainerVideoDownload(creationId);
+      await this.verifyStatusCodeContainerVideoDownload(creationId);
 
-    return (
-      await this.api.post(`${this.ingId}/media_publish`, undefined, {
-        params: {
-          creation_id: creationId,
-          access_token: this.pageAccessToken,
-        },
-      })
-    ).data.id;
+      return (
+        await this.api.post(`${this.ingId}/media_publish`, undefined, {
+          params: {
+            creation_id: creationId,
+            access_token: this.pageAccessToken,
+          },
+        })
+      ).data.id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error when upload create carrousel post",
+        error,
+      });
+    }
   };
 
   public async createPost(post: CreatePost): Promise<string> {
