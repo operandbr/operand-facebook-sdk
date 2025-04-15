@@ -44,11 +44,9 @@ export class PagePublish extends MetaUtils implements IPagePublish {
   }
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
-    if (file === "photo") {
-      return ["jpeg", "bmp", "png", "gif", "tiff", "jpg"].includes(type);
-    }
-
-    return ["mp4"].includes(type);
+    return file === "photo"
+      ? ["jpeg", "jpg", "png", "gif", "BMP", "TIFF", "WEBP"].includes(type)
+      : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
   }
 
   private verifyClosedGOP(metadata: ffmpeg.FfprobeData): boolean {

@@ -27,8 +27,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
     return file === "photo"
-      ? ["jpeg", "jpg", "png"].includes(type)
-      : ["mp4"].includes(type);
+      ? ["jpeg", "jpg", "png", "gif", "BMP", "TIFF", "WEBP"].includes(type)
+      : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
   }
 
   private async verifyPhotoSize(
@@ -47,14 +47,15 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     let statusCodeContainer = 1;
 
     while (statusCodeContainer === 1) {
-      const status = (
+      const response =
         await this.api.get<GetStatusMediaContainerDownloadResponse>(`/${id}`, {
           params: {
             access_token: this.pageAccessToken,
             fields: "status_code",
           },
-        })
-      ).data.status_code;
+        });
+
+      const status = response?.data?.status_code;
 
       if (status === "IN_PROGRESS") {
         await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -159,7 +160,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
       });
     }
 
-    if (!["mp4", "mov"].includes(fileType.ext)) {
+    if (!this.fileTypesPermitted("video", fileType.ext)) {
       throw new OperandError({
         message: "Invalid file type. File types permitted: mp4, mov",
       });
@@ -213,7 +214,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
       });
     }
 
-    if (!["mp4", "mov"].includes(fileType.ext)) {
+    if (!this.fileTypesPermitted("video", fileType.ext)) {
       throw new OperandError({
         message: "Invalid file type. File types permitted: mp4, mov",
       });

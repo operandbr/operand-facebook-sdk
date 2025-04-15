@@ -183,9 +183,8 @@ export class OperandError {
           break;
 
         default:
-          this.message_private =
-            data.error.message || "Error communicating with the target";
-          this.code_private = data.error.code || 500;
+          this.message_private = "Error communicating with the target";
+          this.code_private = 500;
       }
     } else {
       this.message_private = "Unknown error occurred";
