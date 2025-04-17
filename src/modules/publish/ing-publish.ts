@@ -443,52 +443,66 @@ export class IngPublish extends MetaUtils implements IIngPublish {
   }
 
   private async createPhotoStory(photo: PhotoMediaItem): Promise<string> {
-    const photoId = await this.savePhotoInMetaContainerByUrl({
-      value: photo.value,
-      to: "STORIES",
-    });
+    try {
+      const photoId = await this.savePhotoInMetaContainerByUrl({
+        value: photo.value,
+        to: "STORIES",
+      });
 
-    await this.verifyStatusCodeContainerVideoDownload(photoId);
+      await this.verifyStatusCodeContainerVideoDownload(photoId);
 
-    return (
-      await this.api.post<SaveMediaStorageResponse>(
-        `${this.ingId}/media_publish`,
-        undefined,
-        {
-          params: {
-            creation_id: photoId,
-            access_token: this.pageAccessToken,
+      return (
+        await this.api.post<SaveMediaStorageResponse>(
+          `${this.ingId}/media_publish`,
+          undefined,
+          {
+            params: {
+              creation_id: photoId,
+              access_token: this.pageAccessToken,
+            },
           },
-        },
-      )
-    ).data.id;
+        )
+      ).data.id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in create photo stories",
+        error,
+      });
+    }
   }
 
   private async createVideoStory(video: VideoMediaItem): Promise<string> {
-    const data = {
-      to: "STORIES" as const,
-      value: video.value,
-    };
+    try {
+      const data = {
+        to: "STORIES" as const,
+        value: video.value,
+      };
 
-    const videoId =
-      video.source === "url"
-        ? await this.saveVideoInMetaContainerByUrl(data)
-        : await this.saveVideoInMetaContainerByPath(data);
+      const videoId =
+        video.source === "url"
+          ? await this.saveVideoInMetaContainerByUrl(data)
+          : await this.saveVideoInMetaContainerByPath(data);
 
-    await this.verifyStatusCodeContainerVideoDownload(videoId);
+      await this.verifyStatusCodeContainerVideoDownload(videoId);
 
-    return (
-      await this.api.post<SaveMediaStorageResponse>(
-        `${this.ingId}/media_publish`,
-        undefined,
-        {
-          params: {
-            creation_id: videoId,
-            access_token: this.pageAccessToken,
+      return (
+        await this.api.post<SaveMediaStorageResponse>(
+          `${this.ingId}/media_publish`,
+          undefined,
+          {
+            params: {
+              creation_id: videoId,
+              access_token: this.pageAccessToken,
+            },
           },
-        },
-      )
-    ).data.id;
+        )
+      ).data.id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in create video stories",
+        error,
+      });
+    }
   }
 
   public async createStories(media: CreateStories): Promise<string> {
@@ -506,13 +520,20 @@ export class IngPublish extends MetaUtils implements IIngPublish {
   }
 
   public async getLinkPost(id: string): Promise<string> {
-    return (
-      await this.api.get<{ permalink: string; id: string }>(`${id}`, {
-        params: {
-          fields: "permalink",
-          access_token: this.pageAccessToken,
-        },
-      })
-    ).data.permalink;
+    try {
+      return (
+        await this.api.get<{ permalink: string; id: string }>(`${id}`, {
+          params: {
+            fields: "permalink",
+            access_token: this.pageAccessToken,
+          },
+        })
+      ).data.permalink;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in get link post",
+        error,
+      });
+    }
   }
 }

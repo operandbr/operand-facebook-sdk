@@ -6,10 +6,7 @@ export class OperandError {
   private code_private: number;
 
   parseMetaError(...data: any) {
-    let { error } = data[0];
-    const { err } = data;
-
-    error = error || err;
+    const { error, message } = data[0];
 
     if (error instanceof AxiosError) {
       const data = error.response?.data as MetaError;
@@ -187,8 +184,11 @@ export class OperandError {
             data.error.message || "Error communicating with the target";
           this.code_private = data.error.code || 500;
       }
+    } else if (error instanceof OperandError) {
+      this.message_private = error.message;
+      this.code_private = error.code;
     } else {
-      this.message_private = "Unknown error occurred";
+      this.message_private = message || "Unknown error occurred";
       this.code_private = 500;
     }
   }

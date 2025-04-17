@@ -70,13 +70,17 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     );
   }
 
-  public async verifyVideoSpec(videoBuffer: Buffer): Promise<boolean> {
+  public async verifyVideoSpec(
+    videoBuffer: Buffer,
+    ext: string,
+    to: "reels" | "post" | "stories",
+  ): Promise<boolean> {
     const tempFilePath = path.resolve(
       __dirname,
       "..",
       "..",
       "temp",
-      `${Date.now()}.mp4`,
+      `${Date.now()}.${ext}`,
     );
     await fs.promises.writeFile(tempFilePath, videoBuffer);
 
@@ -93,13 +97,22 @@ export class PagePublish extends MetaUtils implements IPagePublish {
         const fpsString = stream?.avg_frame_rate;
         const fps = fpsString ? eval(fpsString) : 0;
         const ratio = width / height;
+        const size = metadata.format.size;
+        const duration = metadata.format.duration;
 
-        const validResolution =
-          width && height && width >= 540 && height >= 960;
+        const isReelsOrStories = ["reels", "stories"].includes(to);
+
+        const validResolution = isReelsOrStories
+          ? width && height && width >= 540 && height >= 960
+          : width && height && width <= 1920 && height <= 1080;
 
         if (!validResolution) {
           resolve(
-            `Invalid resolution. The video must have at least 540x960. The current resolution is ${width}x${height}.`,
+            `Invalid resolution. The video must have at least ${
+              isReelsOrStories
+                ? "The video must have at least 540x960"
+                : "The video must have a maximum of 1920x1080"
+            }. The current resolution is ${width}x${height}.`,
           );
         }
 
@@ -111,11 +124,29 @@ export class PagePublish extends MetaUtils implements IPagePublish {
           );
         }
 
-        const validRatio = ratio <= 0.5625;
+        const validRatio = isReelsOrStories ? ratio <= 0.5625 : true;
 
         if (!validRatio) {
           resolve(
             `Invalid ratio. The video must have a ratio of 0.56 or less. The current ratio is ${ratio}.`,
+          );
+        }
+
+        const validSize = isReelsOrStories
+          ? true
+          : size < 1024 * 1024 * 1024 * 10;
+
+        if (!validSize) {
+          resolve(`Invalid size. The video must be a maximum of 10 gigabytes.`);
+        }
+
+        const validDuration = isReelsOrStories
+          ? duration <= 60
+          : duration <= 14400;
+
+        if (!validDuration) {
+          resolve(
+            `Invalid duration. The video must be a maximum of ${isReelsOrStories ? "60 seconds" : "240 minutes"}.`,
           );
         }
 
@@ -138,13 +169,16 @@ export class PagePublish extends MetaUtils implements IPagePublish {
         };
 
         const audioChecks = {
-          bitrate: parseInt(audioStream?.bit_rate ?? "0") >= 128000,
+          bitrate: isReelsOrStories
+            ? parseInt(audioStream?.bit_rate ?? "0") >= 128000
+            : parseInt(audioStream?.bit_rate ?? "0") <= 4000000,
           channels: audioStream?.channels === 2,
           codec: audioStream?.codec_name === "aac",
           sampleRate: audioStream?.sample_rate === 48000,
         };
 
         if (
+          isReelsOrStories &&
           !(
             Object.values(videoChecks).every(Boolean) &&
             Object.values(audioChecks).every(Boolean)
@@ -163,6 +197,13 @@ export class PagePublish extends MetaUtils implements IPagePublish {
               "- Channels: 2 \n" +
               "- Codec: aac \n" +
               "- Sample rate: 48000",
+          );
+        }
+        if (!isReelsOrStories && !audioChecks.bitrate) {
+          resolve(
+            "The video does not meet the requirements. The video must have the following characteristics: \n" +
+              "Audio: \n" +
+              "- Bitrate: 4MB or less \n",
           );
         }
 
@@ -302,8 +343,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       });
     }
 
-    // IN FUTURE, UNCOMMENT THIS LINE
-    // await this.verifyVideoSpec(Buffer.from(arrayBuffer));
+    // await this.verifyVideoSpec(Buffer.from(arrayBuffer), fileType.ext, to);
 
     const {
       data: { upload_url, video_id },
@@ -349,8 +389,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       });
     }
 
-    // IN FUTURE, UNCOMMENT THIS LINE
-    // await this.verifyVideoSpec(await fs.promises.readFile(video));
+    // await this.verifyVideoSpec(
+    //   await fs.promises.readFile(video),
+    //   fileType.ext,
+    //   to,
+    // );
 
     const {
       data: { upload_url, video_id },
@@ -519,6 +562,12 @@ export class PagePublish extends MetaUtils implements IPagePublish {
         });
       }
 
+      // await this.verifyVideoSpec(
+      //   Buffer.from(arrayBuffer),
+      //   fileType.ext,
+      //   "post",
+      // );
+
       const formData = new FormData();
       formData.append("description", message);
       formData.append(
@@ -592,62 +641,93 @@ export class PagePublish extends MetaUtils implements IPagePublish {
   }
 
   public async updatePost(postId: string, message: string): Promise<boolean> {
-    return (
-      await this.api.post<UpdatePagePostResponse>(`/${postId}`, {
-        access_token: this.pageAccessToken,
-        message,
-      })
-    ).data.success;
+    try {
+      return (
+        await this.api.post<UpdatePagePostResponse>(`/${postId}`, {
+          access_token: this.pageAccessToken,
+          message,
+        })
+      ).data.success;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in update post",
+        error,
+      });
+    }
   }
 
   public async deletePost(postId: string): Promise<boolean> {
-    return (
-      await this.api.delete<DeletePagePostResponse>(`/${postId}`, {
-        params: {
-          access_token: this.pageAccessToken,
-        },
-      })
-    ).data.success;
+    try {
+      return (
+        await this.api.delete<DeletePagePostResponse>(`/${postId}`, {
+          params: {
+            access_token: this.pageAccessToken,
+          },
+        })
+      ).data.success;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in delete post",
+        error,
+      });
+    }
   }
 
   private async createPhotoStory(story: CreateStories): Promise<string> {
-    const photoId =
-      story.source === "url"
-        ? await this.savePhotoInMetaStorageByUrl(story.url)
-        : await this.savePhotoInMetaStorageByPath(story.path);
+    try {
+      const photoId =
+        story.source === "url"
+          ? await this.savePhotoInMetaStorageByUrl(story.url)
+          : await this.savePhotoInMetaStorageByPath(story.path);
 
-    const response = await this.api.post<CreatePhotoStoriesResponse>(
-      `/${this.pageId}/photo_stories`,
-      {
-        access_token: this.pageAccessToken,
-        photo_id: photoId,
-      },
-    );
+      const response = await this.api.post<CreatePhotoStoriesResponse>(
+        `/${this.pageId}/photo_stories`,
+        {
+          access_token: this.pageAccessToken,
+          photo_id: photoId,
+        },
+      );
 
-    return response.data.post_id;
+      return response.data.post_id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in create photo story",
+        error,
+      });
+    }
   }
 
   private async createVideoStory(story: CreateStories): Promise<string> {
-    const videoId =
-      story.source === "url"
-        ? await this.saveVideoInMetaStorageMomentaryByUrl(story.url, "stories")
-        : await this.saveVideoInMetaStorageMomentaryByPath(
-            story.path,
-            "stories",
-          );
+    try {
+      const videoId =
+        story.source === "url"
+          ? await this.saveVideoInMetaStorageMomentaryByUrl(
+              story.url,
+              "stories",
+            )
+          : await this.saveVideoInMetaStorageMomentaryByPath(
+              story.path,
+              "stories",
+            );
 
-    const {
-      data: { post_id },
-    } = await this.api.post<CreateFinishVideoUploadResponse>(
-      `${this.pageId}/video_stories`,
-      {
-        upload_phase: "finish",
-        video_id: videoId,
-        access_token: this.pageAccessToken,
-      },
-    );
+      const {
+        data: { post_id },
+      } = await this.api.post<CreateFinishVideoUploadResponse>(
+        `${this.pageId}/video_stories`,
+        {
+          upload_phase: "finish",
+          video_id: videoId,
+          access_token: this.pageAccessToken,
+        },
+      );
 
-    return post_id;
+      return post_id;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in create video story",
+        error,
+      });
+    }
   }
 
   public async createStories(story: CreateStories): Promise<string> {
@@ -665,34 +745,44 @@ export class PagePublish extends MetaUtils implements IPagePublish {
   public async createReels(
     reel: CreateReels,
   ): Promise<{ postId: string; videoId: string }> {
-    await this.createTempFolder();
+    try {
+      await this.createTempFolder();
 
-    const videoId =
-      reel.source === "url"
-        ? await this.saveVideoInMetaStorageMomentaryByUrl(reel.url, "reels")
-        : await this.saveVideoInMetaStorageMomentaryByPath(reel.path, "reels");
+      const videoId =
+        reel.source === "url"
+          ? await this.saveVideoInMetaStorageMomentaryByUrl(reel.url, "reels")
+          : await this.saveVideoInMetaStorageMomentaryByPath(
+              reel.path,
+              "reels",
+            );
 
-    const {
-      data: { post_id },
-    } = await this.api.post<CreateFinishVideoUploadResponse>(
-      `${this.pageId}/video_reels`,
-      {},
-      {
-        params: {
-          video_id: videoId,
-          upload_phase: "finish",
-          video_state: "PUBLISHED",
-          description: reel.description,
-          title: reel.title,
-          access_token: this.pageAccessToken,
+      const {
+        data: { post_id },
+      } = await this.api.post<CreateFinishVideoUploadResponse>(
+        `${this.pageId}/video_reels`,
+        {},
+        {
+          params: {
+            video_id: videoId,
+            upload_phase: "finish",
+            video_state: "PUBLISHED",
+            description: reel.description,
+            title: reel.title,
+            access_token: this.pageAccessToken,
+          },
         },
-      },
-    );
+      );
 
-    return {
-      postId: post_id,
-      videoId,
-    };
+      return {
+        postId: post_id,
+        videoId,
+      };
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in create reels",
+        error,
+      });
+    }
   }
 
   public async setThumbnailToReels({
@@ -700,53 +790,71 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     value,
     videoId,
   }: SetThumbnailToReels) {
-    let buffer: Buffer;
+    try {
+      let buffer: Buffer;
 
-    if (source === "path") {
-      buffer = await fs.promises.readFile(value);
-    } else {
-      const response = await fetch(value);
-      buffer = Buffer.from(await response.arrayBuffer());
+      if (source === "path") {
+        buffer = await fs.promises.readFile(value);
+      } else {
+        const response = await fetch(value);
+        buffer = Buffer.from(await response.arrayBuffer());
+      }
+
+      const { ext } = await FileType.fromBuffer(buffer);
+
+      const pathFile = path.resolve(
+        __dirname,
+        "..",
+        "..",
+        "temp",
+        `${new Date().getTime()}.${ext}`,
+      );
+
+      await fs.promises.writeFile(pathFile, buffer);
+
+      const fileStream = fs.createReadStream(pathFile);
+
+      const formData = new FormData();
+
+      formData.append("source", fileStream);
+
+      await this.api.post(`${videoId}/thumbnails`, formData, {
+        params: {
+          access_token: this.pageAccessToken,
+          is_preferred: true,
+        },
+        headers: {
+          ...formData.getHeaders(),
+        },
+      });
+
+      await fs.promises.unlink(pathFile);
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in set thumbnail to reels",
+        error,
+      });
     }
-
-    const { ext } = await FileType.fromBuffer(buffer);
-
-    const pathFile = path.resolve(
-      __dirname,
-      "..",
-      "..",
-      "temp",
-      `${new Date().getTime()}.${ext}`,
-    );
-
-    await fs.promises.writeFile(pathFile, buffer);
-
-    const fileStream = fs.createReadStream(pathFile);
-
-    const formData = new FormData();
-
-    formData.append("source", fileStream);
-
-    await this.api.post(`${videoId}/thumbnails`, formData, {
-      params: {
-        access_token: this.pageAccessToken,
-        is_preferred: true,
-      },
-      headers: {
-        ...formData.getHeaders(),
-      },
-    });
-
-    await fs.promises.unlink(pathFile);
-
-    return {
-      success: true,
-    };
   }
 
   public async getLinkStories(id: string) {
-    return (
-      await this.api.get<GetStoriesPageResponse>(`${this.pageId}/`)
-    ).data.data.find((data) => data.post_id === id).url;
+    try {
+      return (
+        await this.api.get<GetStoriesPageResponse>(`${this.pageId}/stories`, {
+          params: {
+            access_token: this.pageAccessToken,
+          },
+        })
+      ).data.data.find((data) => data.post_id === id)?.url;
+    } catch (error) {
+      throw new OperandError({
+        message: "Error in get link stories",
+        error,
+      });
+    }
   }
 }
