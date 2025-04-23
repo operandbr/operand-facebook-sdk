@@ -16,6 +16,8 @@ import {
 import * as FileType from "file-type";
 import * as fs from "node:fs";
 import { MetaUtils } from "../utils/meta-utils";
+import * as path from "node:path";
+import * as ffmpeg from "fluent-ffmpeg";
 
 export class IngPublish extends MetaUtils implements IIngPublish {
   protected readonly ingId: string;
@@ -29,6 +31,162 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     return file === "photo"
       ? ["jpeg", "jpg", "png", "gif", "BMP", "TIFF", "WEBP"].includes(type)
       : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
+  }
+
+  public async verifyVideoSpec(
+    videoBuffer: Buffer,
+    ext: string,
+    to: "reels" | "post" | "stories",
+  ): Promise<{
+    success: boolean;
+    warn?: {
+      videoChecks: {
+        chromaSubsampling: boolean;
+        fixedFrameRate: boolean;
+        progressive: boolean;
+        ratio: boolean;
+      };
+      audioChecks: {
+        bitrate: boolean;
+        channels: boolean;
+        sampleRate: boolean;
+      };
+    };
+    error?: string;
+  }> {
+    const tempFilePath = path.resolve(
+      __dirname,
+      "..",
+      "..",
+      "temp",
+      `${Date.now()}.${ext}`,
+    );
+    await fs.promises.writeFile(tempFilePath, videoBuffer);
+
+    const videoSpecResponse = await new Promise<{
+      success: boolean;
+      warn?: {
+        videoChecks: {
+          chromaSubsampling: boolean;
+          fixedFrameRate: boolean;
+          progressive: boolean;
+          ratio: boolean;
+        };
+        audioChecks: {
+          bitrate: boolean;
+          channels: boolean;
+          sampleRate: boolean;
+        };
+      };
+      error?: string;
+    }>((resolve, reject) => {
+      ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
+        if (err) {
+          reject(err);
+        }
+
+        const stream = metadata.streams.find((s) => s.width && s.height);
+
+        const width = stream?.width;
+        const height = stream?.height;
+        const fpsString = stream?.avg_frame_rate;
+        const fps = fpsString ? eval(fpsString) : 0;
+        const ratio = width / height;
+        const size = metadata.format.size;
+        const duration = metadata.format.duration;
+
+        const isStories = to === "stories";
+
+        const validFps = fps && fps >= 23 && fps <= 60;
+
+        if (!validFps) {
+          resolve({
+            success: false,
+            error: `Invalid fps. The video must have between 23 and 60 fps. The current fps is ${fps}.`,
+          });
+        }
+
+        const validSize = size < 1024 * 1024 * 1024;
+
+        if (!validSize) {
+          resolve({
+            success: false,
+            error: `Invalid size. The video must be a maximum of 10 gigabytes.`,
+          });
+        }
+
+        const validDuration = isStories ? duration <= 60 : duration <= 900;
+
+        if (!validDuration) {
+          resolve({
+            success: false,
+            error: `Invalid duration. The video must be a maximum of ${isStories ? "60 seconds" : "900 minutes"}.`,
+          });
+        }
+
+        const videoStream = metadata.streams.find(
+          (s) => s.codec_type === "video",
+        );
+        const audioStream = metadata.streams.find(
+          (s) => s.codec_type === "audio",
+        );
+
+        const validVideoCodec = ["h264", "hevc"].includes(
+          videoStream?.codec_name ?? "",
+        );
+
+        const validAudioCodec = ["aac"].includes(audioStream?.codec_name ?? "");
+
+        if (!validVideoCodec) {
+          resolve({
+            success: false,
+            error: `Invalid codecs. The video must have the following video codecs: h264, hevc, vp9, av1`,
+          });
+        }
+
+        if (!validAudioCodec) {
+          resolve({
+            success: false,
+            error: `Invalid codecs. The video must be have aac audio codec`,
+          });
+        }
+
+        const videoChecks = {
+          chromaSubsampling: videoStream?.pix_fmt === "yuv420p",
+          fixedFrameRate:
+            videoStream?.avg_frame_rate === videoStream?.r_frame_rate,
+          progressive:
+            videoStream?.field_order === "progressive" ||
+            videoStream.progressive === "1" ||
+            videoStream.progressive === true ||
+            (!videoStream.interlaced &&
+              !videoStream.top_field_first &&
+              !videoStream.bottom_field_first) ||
+            videoStream.interlaced === "0" ||
+            videoStream.interlaced === false,
+          ratio: ratio <= 0.5625,
+        };
+
+        const audioChecks = {
+          bitrate: parseInt(audioStream?.bit_rate ?? "0") >= 128000,
+          channels: audioStream?.channels === 2,
+          sampleRate: audioStream?.sample_rate === 48000,
+        };
+
+        resolve({
+          success: true,
+          warn: { videoChecks, audioChecks },
+        });
+
+        resolve({
+          success: true,
+        });
+      });
+    });
+
+    fs.promises.unlink(tempFilePath);
+
+    return videoSpecResponse;
   }
 
   private async verifyPhotoSize(

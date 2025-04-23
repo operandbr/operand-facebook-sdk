@@ -49,32 +49,26 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
   }
 
-  private verifyClosedGOP(metadata: ffmpeg.FfprobeData): boolean {
-    const videoStream = metadata.streams.find(
-      (s: any) => s.codec_type === "video",
-    );
-    if (!videoStream) return false;
-
-    const keyFrames = videoStream.tags?.key_frame_interval
-      ?.split(",")
-      .map(Number);
-    if (!keyFrames || keyFrames.length < 2) return false;
-
-    const gopIntervals = keyFrames
-      .slice(1)
-      .map((frame, index) => frame - keyFrames[index]);
-
-    const frameRate = eval(videoStream.r_frame_rate); // Exemplo: "30/1" -> 30
-    return gopIntervals.every(
-      (interval) => interval / frameRate >= 2 && interval / frameRate <= 5,
-    );
-  }
-
   public async verifyVideoSpec(
     videoBuffer: Buffer,
     ext: string,
     to: "reels" | "post" | "stories",
-  ): Promise<boolean> {
+  ): Promise<{
+    success: boolean;
+    warn?: {
+      videoChecks: {
+        chromaSubsampling: boolean;
+        fixedFrameRate: boolean;
+        progressive: boolean;
+      };
+      audioChecks: {
+        bitrate: boolean;
+        channels: boolean;
+        sampleRate: boolean;
+      };
+    };
+    error?: string;
+  }> {
     const tempFilePath = path.resolve(
       __dirname,
       "..",
@@ -84,7 +78,22 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     );
     await fs.promises.writeFile(tempFilePath, videoBuffer);
 
-    const textResponse = await new Promise<string>((resolve, reject) => {
+    const videoSpecResponse = await new Promise<{
+      success: boolean;
+      warn?: {
+        videoChecks: {
+          chromaSubsampling: boolean;
+          fixedFrameRate: boolean;
+          progressive: boolean;
+        };
+        audioChecks: {
+          bitrate: boolean;
+          channels: boolean;
+          sampleRate: boolean;
+        };
+      };
+      error?: string;
+    }>((resolve, reject) => {
       ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
         if (err) {
           reject(err);
@@ -107,29 +116,32 @@ export class PagePublish extends MetaUtils implements IPagePublish {
           : width && height && width <= 1920 && height <= 1080;
 
         if (!validResolution) {
-          resolve(
-            `Invalid resolution. The video must have at least ${
+          resolve({
+            success: false,
+            error: `Invalid resolution. The video must have at least ${
               isReelsOrStories
                 ? "The video must have at least 540x960"
                 : "The video must have a maximum of 1920x1080"
             }. The current resolution is ${width}x${height}.`,
-          );
+          });
         }
 
         const validFps = fps && fps >= 24 && fps <= 60;
 
         if (!validFps) {
-          resolve(
-            `Invalid fps. The video must have between 24 and 60 fps. The current fps is ${fps}.`,
-          );
+          resolve({
+            success: false,
+            error: `Invalid fps. The video must have between 24 and 60 fps. The current fps is ${fps}.`,
+          });
         }
 
         const validRatio = isReelsOrStories ? ratio <= 0.5625 : true;
 
         if (!validRatio) {
-          resolve(
-            `Invalid ratio. The video must have a ratio of 0.56 or less. The current ratio is ${ratio}.`,
-          );
+          resolve({
+            success: false,
+            error: `Invalid ratio. The video must have a ratio of 0.56 or less. The current ratio is ${ratio}.`,
+          });
         }
 
         const validSize = isReelsOrStories
@@ -137,7 +149,10 @@ export class PagePublish extends MetaUtils implements IPagePublish {
           : size < 1024 * 1024 * 1024 * 10;
 
         if (!validSize) {
-          resolve(`Invalid size. The video must be a maximum of 10 gigabytes.`);
+          resolve({
+            success: false,
+            error: `Invalid size. The video must be a maximum of 10 gigabytes.`,
+          });
         }
 
         const validDuration = isReelsOrStories
@@ -145,9 +160,10 @@ export class PagePublish extends MetaUtils implements IPagePublish {
           : duration <= 14400;
 
         if (!validDuration) {
-          resolve(
-            `Invalid duration. The video must be a maximum of ${isReelsOrStories ? "60 seconds" : "240 minutes"}.`,
-          );
+          resolve({
+            success: false,
+            error: `Invalid duration. The video must be a maximum of ${isReelsOrStories ? "60 seconds" : "240 minutes"}.`,
+          });
         }
 
         const videoStream = metadata.streams.find(
@@ -157,15 +173,39 @@ export class PagePublish extends MetaUtils implements IPagePublish {
           (s) => s.codec_type === "audio",
         );
 
+        const validVideoCodec = ["h264", "hevc", "vp9", "av1"].includes(
+          videoStream?.codec_name ?? "",
+        );
+
+        const validAudioCodec = ["aac"].includes(audioStream?.codec_name ?? "");
+
+        if (!validVideoCodec) {
+          resolve({
+            success: false,
+            error: `Invalid codecs. The video must have the following video codecs: h264, hevc, vp9, av1`,
+          });
+        }
+
+        if (!validAudioCodec) {
+          resolve({
+            success: false,
+            error: `Invalid codecs. The video must be have aac audio codec`,
+          });
+        }
+
         const videoChecks = {
           chromaSubsampling: videoStream?.pix_fmt === "yuv420p",
-          closedGOP: this.verifyClosedGOP(metadata),
-          compression: ["h264", "hevc", "vp9", "av1"].includes(
-            videoStream?.codec_name ?? "",
-          ),
           fixedFrameRate:
             videoStream?.avg_frame_rate === videoStream?.r_frame_rate,
-          progressive: videoStream?.field_order === "progressive",
+          progressive:
+            videoStream?.field_order === "progressive" ||
+            videoStream.progressive === "1" ||
+            videoStream.progressive === true ||
+            (!videoStream.interlaced &&
+              !videoStream.top_field_first &&
+              !videoStream.bottom_field_first) ||
+            videoStream.interlaced === "0" ||
+            videoStream.interlaced === false,
         };
 
         const audioChecks = {
@@ -173,53 +213,19 @@ export class PagePublish extends MetaUtils implements IPagePublish {
             ? parseInt(audioStream?.bit_rate ?? "0") >= 128000
             : parseInt(audioStream?.bit_rate ?? "0") <= 4000000,
           channels: audioStream?.channels === 2,
-          codec: audioStream?.codec_name === "aac",
           sampleRate: audioStream?.sample_rate === 48000,
         };
 
-        if (
-          isReelsOrStories &&
-          !(
-            Object.values(videoChecks).every(Boolean) &&
-            Object.values(audioChecks).every(Boolean)
-          )
-        ) {
-          resolve(
-            "The video does not meet the requirements. The video must have the following characteristics: \n" +
-              "Video: \n" +
-              "- Chroma subsampling: yuv420p \n" +
-              "- Closed GOP \n" +
-              "- Compression: h264, hevc, vp9 or av1 \n" +
-              "- Fixed frame rate \n" +
-              "- Progressive \n" +
-              "Audio: \n" +
-              "- Bitrate: 128kbps or more \n" +
-              "- Channels: 2 \n" +
-              "- Codec: aac \n" +
-              "- Sample rate: 48000",
-          );
-        }
-        if (!isReelsOrStories && !audioChecks.bitrate) {
-          resolve(
-            "The video does not meet the requirements. The video must have the following characteristics: \n" +
-              "Audio: \n" +
-              "- Bitrate: 4MB or less \n",
-          );
-        }
-
-        resolve("ok");
+        resolve({
+          success: true,
+          warn: { videoChecks, audioChecks },
+        });
       });
     });
 
     fs.promises.unlink(tempFilePath);
 
-    if (textResponse !== "ok") {
-      throw new OperandError({
-        message: textResponse,
-      });
-    }
-
-    return true;
+    return videoSpecResponse;
   }
 
   private async verifyPhotoSize(
@@ -339,11 +345,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     if (!this.fileTypesPermitted("video", fileType.ext)) {
       throw new OperandError({
         message:
-          "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+          "This file type is not permitted. File types permitted: mp4, avi, flv, mkv, mov, mpeg, wmv.",
       });
     }
 
-    // await this.verifyVideoSpec(Buffer.from(arrayBuffer), fileType.ext, to);
+    await this.verifyVideoSpec(Buffer.from(arrayBuffer), fileType.ext, to);
 
     const {
       data: { upload_url, video_id },
@@ -389,11 +395,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       });
     }
 
-    // await this.verifyVideoSpec(
-    //   await fs.promises.readFile(video),
-    //   fileType.ext,
-    //   to,
-    // );
+    await this.verifyVideoSpec(
+      await fs.promises.readFile(video),
+      fileType.ext,
+      to,
+    );
 
     const {
       data: { upload_url, video_id },
@@ -562,11 +568,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
         });
       }
 
-      // await this.verifyVideoSpec(
-      //   Buffer.from(arrayBuffer),
-      //   fileType.ext,
-      //   "post",
-      // );
+      await this.verifyVideoSpec(
+        Buffer.from(arrayBuffer),
+        fileType.ext,
+        "post",
+      );
 
       const formData = new FormData();
       formData.append("description", message);
