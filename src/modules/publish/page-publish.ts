@@ -49,7 +49,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
   }
 
-  public async verifyVideoSpec(
+  public static async verifyVideoSpec(
     videoSource: Buffer | string,
     ext: string,
     to: "reels" | "post" | "stories",

@@ -33,7 +33,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
       : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
   }
 
-  public async verifyVideoSpec(
+  public static async verifyVideoSpec(
     videoSource: Buffer | string,
     ext: string,
     to: "reels" | "post" | "stories",
