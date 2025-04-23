@@ -357,7 +357,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       });
     }
 
-    await this.verifyVideoSpec(Buffer.from(arrayBuffer), fileType.ext, to);
+    // await PagePublish.verifyVideoSpec(
+    //   Buffer.from(arrayBuffer),
+    //   fileType.ext,
+    //   to,
+    // );
 
     const {
       data: { upload_url, video_id },
@@ -403,11 +407,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       });
     }
 
-    await this.verifyVideoSpec(
-      await fs.promises.readFile(video),
-      fileType.ext,
-      to,
-    );
+    // await PagePublish.verifyVideoSpec(
+    //   await fs.promises.readFile(video),
+    //   fileType.ext,
+    //   to,
+    // );
 
     const {
       data: { upload_url, video_id },
@@ -576,11 +580,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
         });
       }
 
-      await this.verifyVideoSpec(
-        Buffer.from(arrayBuffer),
-        fileType.ext,
-        "post",
-      );
+      // await PagePublish.verifyVideoSpec(
+      //   Buffer.from(arrayBuffer),
+      //   fileType.ext,
+      //   "post",
+      // );
 
       const formData = new FormData();
       formData.append("description", message);
