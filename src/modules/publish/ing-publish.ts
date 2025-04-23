@@ -34,7 +34,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
   }
 
   public async verifyVideoSpec(
-    videoBuffer: Buffer,
+    videoSource: Buffer | string,
     ext: string,
     to: "reels" | "post" | "stories",
   ): Promise<{
@@ -54,14 +54,22 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     };
     error?: string;
   }> {
-    const tempFilePath = path.resolve(
-      __dirname,
-      "..",
-      "..",
-      "temp",
-      `${Date.now()}.${ext}`,
-    );
-    await fs.promises.writeFile(tempFilePath, videoBuffer);
+    let tempFilePath = "";
+
+    const isBuffer = videoSource instanceof Buffer;
+
+    if (isBuffer) {
+      tempFilePath = path.resolve(
+        __dirname,
+        "..",
+        "..",
+        "temp",
+        `${Date.now()}.${ext}`,
+      );
+      await fs.promises.writeFile(tempFilePath, videoSource);
+    } else {
+      tempFilePath = videoSource as string;
+    }
 
     const videoSpecResponse = await new Promise<{
       success: boolean;
@@ -184,7 +192,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
       });
     });
 
-    fs.promises.unlink(tempFilePath);
+    if (isBuffer) await fs.promises.unlink(tempFilePath);
 
     return videoSpecResponse;
   }
