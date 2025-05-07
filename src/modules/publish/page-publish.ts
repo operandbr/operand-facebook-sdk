@@ -45,7 +45,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
     return file === "photo"
-      ? ["jpeg", "jpg", "png", "gif", "BMP", "TIFF", "WEBP"].includes(type)
+      ? ["jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"].includes(type)
       : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
   }
 
