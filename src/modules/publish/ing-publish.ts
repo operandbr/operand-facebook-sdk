@@ -29,7 +29,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
   private fileTypesPermitted(file: "video" | "photo", type: string): boolean {
     return file === "photo"
-      ? ["jpeg", "jpg", "png", "gif", "BMP", "TIFF", "WEBP"].includes(type)
+      ? ["jpeg", "jpg", "png", "gif", "bmp", "tiff", "webp"].includes(type)
       : ["mp4", "avi", "flv", "mkv", "mov", "mpeg", "wmv"].includes(type);
   }
 
@@ -230,7 +230,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
       if (status === "ERROR") {
         throw new OperandError({
-          message: "Error on upload media",
+          message: "Media with problems",
         });
       }
 
