@@ -273,7 +273,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
       throw new OperandError({
-        message: "This file type is not permitted. File types permitted: jpeg.",
+        message:
+          "This file type is not permitted. File types permitted: jpeg, jpg, png, gif, bmp, tiff, webp",
       });
     }
 
@@ -328,7 +329,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
     if (!this.fileTypesPermitted("video", fileType.ext)) {
       throw new OperandError({
-        message: "Invalid file type. File types permitted: mp4, mov",
+        message:
+          "Invalid file type. File types permitted: mp4, avi, flv, mkv, mov, mpeg, wmv",
       });
     }
 
@@ -382,7 +384,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
     if (!this.fileTypesPermitted("video", fileType.ext)) {
       throw new OperandError({
-        message: "Invalid file type. File types permitted: mp4, mov",
+        message:
+          "Invalid file type. File types permitted: mp4, avi, flv, mkv, mov, mpeg, wmv",
       });
     }
 

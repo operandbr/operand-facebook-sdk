@@ -275,7 +275,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
       throw new OperandError({
         message:
-          "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+          "This file type is not permitted. File types permitted: jpeg, jpg, png, gif, bmp, tiff, webp.",
       });
     }
 
@@ -306,7 +306,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     if (!this.fileTypesPermitted("photo", fileType.ext)) {
       throw new OperandError({
         message:
-          "This file type is not permitted. File types permitted: jpeg, bmp, png, gif, tiff.",
+          "This file type is not permitted. File types permitted: jpeg, jpg, png, gif, bmp, tiff, webp.",
       });
     }
 
@@ -403,7 +403,8 @@ export class PagePublish extends MetaUtils implements IPagePublish {
 
     if (!this.fileTypesPermitted("video", fileType.ext)) {
       throw new OperandError({
-        message: "This file type is not permitted. File types permitted: mp4.",
+        message:
+          "This file type is not permitted. File types permitted: mp4, avi, flv, mkv, mov, mpeg, wmv.",
       });
     }
 
@@ -576,7 +577,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       if (!this.fileTypesPermitted("video", fileType.ext)) {
         throw new OperandError({
           message:
-            "This file type is not permitted. File types permitted: mp4.",
+            "This file type is not permitted. File types permitted: mp4, avi, flv, mkv, mov, mpeg, wmv.",
         });
       }
 
