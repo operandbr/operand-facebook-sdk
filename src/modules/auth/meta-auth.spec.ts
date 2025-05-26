@@ -27,7 +27,7 @@ describe("Module MetaAuth", () => {
         mockAccessTokenResponse,
       );
 
-      const accessToken = await MetaAuth.createAccessToken(requestData);
+      const accessToken = await MetaAuth.createAccessTokenFb(requestData);
 
       expect(accessToken).toEqual({
         accessToken: "mocked-access-token",
@@ -70,7 +70,7 @@ describe("Module MetaAuth", () => {
         mockGetPageAccountsResponse,
       );
 
-      const accounts = await MetaAuth.getAccounts(requestData);
+      const accounts = await MetaAuth.getAccountsWithFbToken(requestData);
 
       expect(accounts).toEqual([
         {

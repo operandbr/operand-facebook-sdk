@@ -17,7 +17,7 @@ export class Meta {
 
   constructor({ pageAccessToken, apiVersion }: ConstructorMain) {
     this.pageAccessToken = pageAccessToken;
-    this.api = generateAxiosInstance(apiVersion);
-    this.apiVideo = generateAxiosInstance(apiVersion, true);
+    this.api = generateAxiosInstance({ apiVersion });
+    this.apiVideo = generateAxiosInstance({ apiVersion, isVideoApi: true });
   }
 }
