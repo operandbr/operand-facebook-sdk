@@ -123,6 +123,13 @@ export interface FacebookPage {
   };
 }
 
+export interface InstagramAccount {
+  id: string;
+  username: string;
+  name: string;
+  followers_count: number;
+}
+
 export interface FacebookAdAccount {
   data: Array<{
     account_id: string;
