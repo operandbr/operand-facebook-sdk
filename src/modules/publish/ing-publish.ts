@@ -23,7 +23,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
   protected readonly ingId: string;
 
   constructor({ apiVersion, ingId, pageAccessToken }: ConstructorIng) {
-    super({ apiVersion, pageAccessToken });
+    super({ apiVersion, pageAccessToken, isInstagramApi: true });
     this.ingId = ingId;
   }
 

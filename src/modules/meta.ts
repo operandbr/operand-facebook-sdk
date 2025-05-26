@@ -8,6 +8,7 @@ export class Meta {
   protected readonly pageAccessToken: string;
   protected readonly api: AxiosInstance;
   protected readonly apiVideo: AxiosInstance;
+  protected readonly apiIng: AxiosInstance;
 
   protected async createTempFolder() {
     await fs.promises.mkdir(path.resolve(__dirname, "..", "temp"), {
@@ -15,9 +16,16 @@ export class Meta {
     });
   }
 
-  constructor({ pageAccessToken, apiVersion }: ConstructorMain) {
+  constructor({
+    pageAccessToken,
+    apiVersion,
+    isInstagramApi,
+  }: ConstructorMain) {
     this.pageAccessToken = pageAccessToken;
-    this.api = generateAxiosInstance({ apiVersion });
+    this.api = generateAxiosInstance({
+      apiVersion,
+      isInstagramApi,
+    });
     this.apiVideo = generateAxiosInstance({ apiVersion, isVideoApi: true });
   }
 }

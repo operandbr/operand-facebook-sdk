@@ -3,7 +3,7 @@ import { IngPublish } from "../publish/ing-publish";
 
 export class IngComments extends IngPublish {
   constructor(constructorIng: ConstructorIng) {
-    super(constructorIng);
+    super({ ...constructorIng, isInstagramApi: true });
   }
 
   public async createComment(postId: string, message: string): Promise<string> {
