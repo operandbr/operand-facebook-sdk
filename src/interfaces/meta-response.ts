@@ -282,3 +282,9 @@ export interface MetaError {
     fbtrace_id: string;
   };
 }
+
+export interface GetAlongTokenMetaResponse {
+  access_token: string;
+  token_type: "bearer";
+  expires_in: number;
+}

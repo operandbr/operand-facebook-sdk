@@ -1,4 +1,5 @@
 import {
+  ApiVersion,
   CreateMetaAuth,
   FieldsPage,
   GetAccounts,
@@ -7,6 +8,7 @@ import {
   CreateAccessTokenResponse,
   FacebookAdAccount,
   FacebookPage,
+  GetAlongTokenMetaResponse,
   GetPageAccountsResponse,
   InstagramAccount,
 } from "../../interfaces/meta-response";
@@ -58,7 +60,7 @@ export class MetaAuth {
   }: CreateMetaAuth) {
     const api = generateAxiosInstance({ apiVersion });
 
-    const accessToken = (
+    const shortAccessToken = (
       await api.post<CreateAccessTokenResponse>(`/oauth/access_token`, {
         client_id,
         client_secret,
@@ -67,19 +69,57 @@ export class MetaAuth {
       })
     ).data.access_token;
 
+    const longAccessToken = await this.extendUserAccessToken({
+      client_id,
+      client_secret,
+      accessToken: shortAccessToken,
+      apiVersion,
+    });
+
     return {
-      accessToken,
+      accessToken: longAccessToken,
       getAccounts: ({ fields }: { fields: FieldsPage }) => {
         return MetaAuth.getAccountsWithFbToken({
           fields,
-          accessToken,
+          accessToken: longAccessToken,
           apiVersion,
         });
       },
       getAdAccounts: () => {
-        return MetaAuth.getAdAccounts({ accessToken, apiVersion });
+        return MetaAuth.getAdAccounts({
+          accessToken: longAccessToken,
+          apiVersion,
+        });
       },
     };
+  }
+
+  public static async extendUserAccessToken({
+    client_id,
+    client_secret,
+    accessToken,
+    apiVersion,
+  }: {
+    client_id: string;
+    client_secret: string;
+    accessToken: string;
+    apiVersion: ApiVersion;
+  }) {
+    const api = generateAxiosInstance({ apiVersion });
+
+    const response = await api.get<GetAlongTokenMetaResponse>(
+      "/oauth/access_token",
+      {
+        params: {
+          grant_type: "fb_exchange_token",
+          client_id,
+          client_secret,
+          fb_exchange_token: accessToken,
+        },
+      },
+    );
+
+    return response.data.access_token;
   }
 
   public static async getAccountsWithFbToken({
@@ -129,5 +169,46 @@ export class MetaAuth {
         },
       })
     ).data.data;
+  }
+
+  public static async generateIgLongToken({
+    accessToken,
+    apiVersion,
+    clientSecret,
+  }: {
+    accessToken: string;
+    apiVersion: ApiVersion;
+    clientSecret: string;
+  }): Promise<string> {
+    const api = generateAxiosInstance({ apiVersion, isInstagramApi: true });
+
+    return (
+      await api.get<GetAlongTokenMetaResponse>("/access_token", {
+        params: {
+          client_secret: clientSecret,
+          access_token: accessToken,
+          grant_type: "ig_exchange_token",
+        },
+      })
+    ).data.access_token;
+  }
+
+  public static async generateIgRefreshToken({
+    accessToken,
+    apiVersion,
+  }: {
+    accessToken: string;
+    apiVersion: ApiVersion;
+  }): Promise<string> {
+    const api = generateAxiosInstance({ apiVersion, isInstagramApi: true });
+
+    return (
+      await api.get<GetAlongTokenMetaResponse>("/access_token", {
+        params: {
+          access_token: accessToken,
+          grant_type: "ig_refresh_token",
+        },
+      })
+    ).data.access_token;
   }
 }
