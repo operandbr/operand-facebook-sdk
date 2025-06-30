@@ -37,14 +37,14 @@ export class MetaAuth {
 
     const accessToken = (
       await api.post<CreateAccessTokenResponse>(`/oauth/access_token`, data)
-    ).data.access_token;
+    ).data;
 
     return {
-      accessToken,
+      accessToken: accessToken.access_token,
       getAccounts: ({ fields }: { fields: FieldsPage }) => {
         return MetaAuth.getAccountsWithIgToken({
           fields,
-          accessToken,
+          accessToken: accessToken.access_token,
           apiVersion,
         });
       },

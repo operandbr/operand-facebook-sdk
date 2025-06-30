@@ -4,7 +4,7 @@
     "declaration": true,
     "removeComments": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es6",
+    "target": "ES2017",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",

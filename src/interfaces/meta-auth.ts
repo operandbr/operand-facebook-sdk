@@ -1,4 +1,11 @@
-export type ApiVersion = "v17.0" | "v18.0" | "v19.0" | "v20.0" | "v21.0";
+export type ApiVersion =
+  | "v17.0"
+  | "v18.0"
+  | "v19.0"
+  | "v20.0"
+  | "v21.0"
+  | "v22.0"
+  | "v23.0";
 
 export type CreateMetaAuth = {
   client_id: string;
