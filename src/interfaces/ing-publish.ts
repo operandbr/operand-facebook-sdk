@@ -2,6 +2,7 @@ import { ConstructorMain } from "./meta";
 
 export interface ConstructorIng extends ConstructorMain {
   ingId: string;
+  connectByFb?: boolean;
 }
 
 export type PhotoMediaItem = {

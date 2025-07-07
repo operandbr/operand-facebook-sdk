@@ -17,7 +17,10 @@ import { IngComments } from "../comments/ing-comments";
 
 export class IngInsights extends IngComments {
   constructor(constructorIng: ConstructorIng) {
-    super({ ...constructorIng, isInstagramApi: true });
+    super({
+      ...constructorIng,
+      isInstagramApi: constructorIng.connectByFb ? false : true,
+    });
   }
 
   private generateSinceAndUntil(startDate: Date, endDate: Date) {
