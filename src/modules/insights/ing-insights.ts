@@ -19,7 +19,7 @@ export class IngInsights extends IngComments {
   constructor(constructorIng: ConstructorIng) {
     super({
       ...constructorIng,
-      isInstagramApi: constructorIng.connectByFb ? false : true,
+      isInstagramApi: constructorIng.typeToken === "ig",
     });
   }
 

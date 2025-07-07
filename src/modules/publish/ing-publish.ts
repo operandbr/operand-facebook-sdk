@@ -21,18 +21,17 @@ import * as ffmpeg from "fluent-ffmpeg";
 
 export class IngPublish extends MetaUtils implements IIngPublish {
   protected readonly ingId: string;
-  private connectByFb?: boolean;
 
   constructor({
     apiVersion,
     ingId,
     pageAccessToken,
-    connectByFb,
+    typeToken,
   }: ConstructorIng) {
     super({
       apiVersion,
       pageAccessToken,
-      isInstagramApi: connectByFb ? false : true,
+      isInstagramApi: typeToken === "ig",
     });
     this.ingId = ingId;
   }
