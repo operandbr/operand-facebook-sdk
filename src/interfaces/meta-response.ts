@@ -145,6 +145,7 @@ export interface FacebookAdAccount {
 
 export interface GetPageAccountsResponse {
   data: Array<FacebookPage>;
+  paging: { cursors: PaginationCursors };
 }
 
 export interface CreateStartVideoUploadResponse {

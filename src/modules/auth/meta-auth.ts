@@ -129,14 +129,27 @@ export class MetaAuth {
   }: GetAccounts): Promise<FacebookPage[]> {
     const api = generateAxiosInstance({ apiVersion });
 
-    return (
-      await api.get<GetPageAccountsResponse>(`/me/accounts`, {
+    const allAccounts: FacebookPage[] = [];
+    let afterCursor: string | undefined = undefined;
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+      const response = await api.get<GetPageAccountsResponse>(`/me/accounts`, {
         params: {
           access_token: accessToken,
           fields: fields.join(","),
+          after: afterCursor,
         },
-      })
-    ).data.data;
+      });
+
+      const { data, paging } = response.data;
+      allAccounts.push(...data);
+
+      afterCursor = paging?.cursors?.after;
+      hasNextPage = Boolean(afterCursor);
+    }
+
+    return allAccounts;
   }
 
   public static async getAccountsWithIgToken({
