@@ -24,9 +24,11 @@ export class IngInsights extends IngComments {
   }
 
   private generateSinceAndUntil(startDate: Date, endDate: Date) {
+    const nextDay = addDays(endDate, 1);
+
     return {
       since: `${getYear(startDate)}-${getMonth(startDate) + 1}-${getDate(startDate)}`,
-      until: `${getYear(endDate)}-${getMonth(endDate) + 1}-${getDate(endDate) + 1}`,
+      until: `${getYear(nextDay)}-${getMonth(nextDay) + 1}-${getDate(nextDay)}`,
     };
   }
 
