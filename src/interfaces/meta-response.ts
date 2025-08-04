@@ -104,7 +104,12 @@ export interface FacebookPage {
   website?: string;
   emails?: string[];
   phone?: string;
-  instagram_business_account?: { id: string; name?: string };
+  instagram_business_account?: {
+    id: string;
+    username: string;
+    name?: string;
+    picture?: string;
+  };
   hours?: {
     monday?: string;
     tuesday?: string;
