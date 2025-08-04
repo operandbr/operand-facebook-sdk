@@ -133,6 +133,7 @@ export interface InstagramAccount {
   username: string;
   name: string;
   followers_count: number;
+  picture?: string;
 }
 
 export interface FacebookAdAccount {
