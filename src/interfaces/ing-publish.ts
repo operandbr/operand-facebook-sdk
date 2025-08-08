@@ -30,8 +30,8 @@ export type CreatePost = {
   caption?: string;
   coverUrl?: string;
   thumbOffset?: number;
-  userTags: UserTag;
-  collaborators: string[];
+  userTags?: UserTag;
+  collaborators?: string[];
 };
 
 export type CreatePhotoStory = Medias & { userTags?: UserTag };
