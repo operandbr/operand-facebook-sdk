@@ -1,7 +1,9 @@
 import {
   ConstructorIng,
+  CreatePhotoStory,
   CreatePost,
   CreateStories,
+  CreateVideoStory,
   IIngPublish,
   PhotoMediaItem,
   saveMediaInMetaIngContainer,
@@ -268,6 +270,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     caption,
     coverUrl,
     thumbOffset,
+    collaborators,
+    userTags,
   }: saveMediaInMetaIngContainer): Promise<string> => {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
@@ -307,6 +311,10 @@ export class IngPublish extends MetaUtils implements IIngPublish {
             ...(caption ? { caption } : {}),
             ...(coverUrl ? { cover_url: coverUrl } : {}),
             ...(thumbOffset ? { thumb_offset: thumbOffset } : {}),
+            ...(userTags ? { user_tags: JSON.stringify(userTags) } : {}),
+            ...(collaborators
+              ? { collaborators: JSON.stringify(userTags) }
+              : {}),
           },
         },
       )
@@ -500,7 +508,14 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
   private createUniquePost = async (post: CreatePost): Promise<string> => {
     try {
-      const { medias, caption, coverUrl, thumbOffset } = post;
+      const {
+        medias,
+        caption,
+        coverUrl,
+        thumbOffset,
+        collaborators,
+        userTags,
+      } = post;
 
       const containerId =
         medias[0].mediaType === "photo"
@@ -510,6 +525,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
               caption,
               coverUrl,
               thumbOffset,
+              collaborators,
+              userTags,
             })
           : medias[0].source === "url"
             ? await this.saveVideoInMetaContainerByUrl({
@@ -518,6 +535,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
                 caption,
                 coverUrl,
                 thumbOffset,
+                collaborators,
+                userTags,
               })
             : await this.saveVideoInMetaContainerByPath({
                 to: "FEED",
@@ -525,6 +544,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
                 caption,
                 coverUrl,
                 thumbOffset,
+                collaborators,
+                userTags,
               });
 
       await this.verifyStatusCodeContainerVideoDownload(containerId);
@@ -620,11 +641,12 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     return this.createCarrouselPost(post);
   }
 
-  private async createPhotoStory(photo: PhotoMediaItem): Promise<string> {
+  private async createPhotoStory(photo: CreatePhotoStory): Promise<string> {
     try {
       const photoId = await this.savePhotoInMetaContainerByUrl({
         value: photo.value,
         to: "STORIES",
+        userTags: photo.userTags,
       });
 
       await this.verifyStatusCodeContainerVideoDownload(photoId);
@@ -649,11 +671,12 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     }
   }
 
-  private async createVideoStory(video: VideoMediaItem): Promise<string> {
+  private async createVideoStory(video: CreateVideoStory): Promise<string> {
     try {
       const data = {
         to: "STORIES" as const,
         value: video.value,
+        userTags: video.userTags,
       };
 
       const videoId =

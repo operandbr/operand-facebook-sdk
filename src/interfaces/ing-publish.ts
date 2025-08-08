@@ -19,14 +19,26 @@ export type VideoMediaItem = {
 
 export type Medias = PhotoMediaItem | VideoMediaItem;
 
+export interface UserTag {
+  username: string;
+  x: number;
+  y: number;
+}
+
 export type CreatePost = {
   medias: Medias[];
   caption?: string;
   coverUrl?: string;
   thumbOffset?: number;
+  userTags: UserTag;
+  collaborators: string[];
 };
 
-export type CreateStories = Medias;
+export type CreatePhotoStory = Medias & { userTags?: UserTag };
+
+export type CreateVideoStory = Medias & { userTags?: UserTag };
+
+export type CreateStories = Medias & { userTags?: UserTag };
 
 export interface IIngPublish {
   createPost(data: CreatePost): Promise<string>;
@@ -41,4 +53,6 @@ export interface saveMediaInMetaIngContainer {
   caption?: string;
   coverUrl?: string;
   thumbOffset?: number;
+  userTags?: UserTag;
+  collaborators?: string[];
 }
