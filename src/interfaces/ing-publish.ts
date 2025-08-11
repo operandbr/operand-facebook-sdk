@@ -30,15 +30,15 @@ export type CreatePost = {
   caption?: string;
   coverUrl?: string;
   thumbOffset?: number;
-  userTags?: UserTag;
+  userTags?: UserTag[];
   collaborators?: string[];
 };
 
-export type CreatePhotoStory = Medias & { userTags?: UserTag };
+export type CreatePhotoStory = Medias & { userTags?: UserTag[] };
 
-export type CreateVideoStory = Medias & { userTags?: UserTag };
+export type CreateVideoStory = Medias & { userTags?: UserTag[] };
 
-export type CreateStories = Medias & { userTags?: UserTag };
+export type CreateStories = Medias & { userTags?: UserTag[] };
 
 export interface IIngPublish {
   createPost(data: CreatePost): Promise<string>;
@@ -53,6 +53,6 @@ export interface saveMediaInMetaIngContainer {
   caption?: string;
   coverUrl?: string;
   thumbOffset?: number;
-  userTags?: UserTag;
+  userTags?: UserTag[];
   collaborators?: string[];
 }
