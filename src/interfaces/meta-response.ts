@@ -295,3 +295,15 @@ export interface GetAlongTokenMetaResponse {
   token_type: "bearer";
   expires_in: number;
 }
+
+export interface BusinessDiscovery {
+  followers_count: number;
+  media_count: number;
+  picture: string;
+  id: string;
+}
+
+export interface GetInstagramDiscoveryResponse {
+  business_discovery: BusinessDiscovery;
+  id: string;
+}
