@@ -22,14 +22,16 @@ export class MetaUtils extends Meta {
     userId: string,
     token: string,
   ) {
-    return axios.get<GetInstagramDiscoveryResponse>(
-      `https://graph.facebook.com/${userId}`,
-      {
-        params: {
-          fields: `business_discovery.username(${username}){followers_count,media_count,profile_picture_url.as(picture)}`,
-          access_token: token,
+    return (
+      await axios.get<GetInstagramDiscoveryResponse>(
+        `https://graph.facebook.com/${userId}`,
+        {
+          params: {
+            fields: `business_discovery.username(${username}){followers_count,media_count,profile_picture_url.as(picture)}`,
+            access_token: token,
+          },
         },
-      },
-    );
+      )
+    ).data;
   }
 }
