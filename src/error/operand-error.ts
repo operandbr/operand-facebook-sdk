@@ -1,4 +1,4 @@
-import { MetaError } from "@/interfaces/meta-response";
+import { MetaError } from "../interfaces/meta-response";
 import { AxiosError } from "axios";
 
 export class OperandError {

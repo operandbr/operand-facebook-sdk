@@ -1,7 +1,7 @@
 import { Meta } from "../meta";
 import { ConstructorMain } from "../../interfaces/meta";
 import axios from "axios";
-import { GetInstagramDiscoveryResponse } from "@/interfaces/meta-response";
+import { GetInstagramDiscoveryResponse } from "../../interfaces/meta-response";
 
 export class MetaUtils extends Meta {
   constructor(data: ConstructorMain) {
