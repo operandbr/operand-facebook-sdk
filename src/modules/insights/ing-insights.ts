@@ -4,15 +4,7 @@ import {
   GetInsightsPageFollowersAndUnFollowersResponse,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
-import {
-  addDays,
-  differenceInDays,
-  endOfDay,
-  getDate,
-  getMonth,
-  getYear,
-  subDays,
-} from "date-fns";
+import { addDays, differenceInDays, endOfDay, format, subDays } from "date-fns";
 import { IngComments } from "../comments/ing-comments";
 
 export class IngInsights extends IngComments {
@@ -27,8 +19,8 @@ export class IngInsights extends IngComments {
     const nextDay = addDays(endDate, 1);
 
     return {
-      since: `${getYear(startDate)}-${getMonth(startDate) + 1}-${getDate(startDate)}`,
-      until: `${getYear(nextDay)}-${getMonth(nextDay) + 1}-${getDate(nextDay)}`,
+      since: format(startDate, "yyyy-MM-dd"),
+      until: format(nextDay, "yyyy-MM-dd"),
     };
   }
 
@@ -37,13 +29,11 @@ export class IngInsights extends IngComments {
     endDate: Date,
     metric: "likes" | "comments" | "shares",
   ): Promise<{ value: number; end_time?: string }[]> {
-    const value: { value: number; end_time?: string }[] = [];
+    const results: { value: number; end_time?: string }[] = [];
 
-    let currentStart = startDate;
+    let currentDate = startDate;
 
-    while (value.length !== differenceInDays(endDate, startDate) + 1) {
-      const daysToAdd = 1;
-
+    while (currentDate <= endDate) {
       const response = await this.api.get<GetInsightsResponse>(
         `/${this.ingId}/insights`,
         {
@@ -51,18 +41,23 @@ export class IngInsights extends IngComments {
             metric,
             period: "day",
             metric_type: "total_value",
-            ...this.generateSinceAndUntil(startDate, endDate),
+            ...this.generateSinceAndUntil(currentDate, currentDate),
             access_token: this.pageAccessToken,
           },
         },
       );
 
-      value.push({ value: response.data.data[0].total_value?.value || 0 });
+      const value = response.data.data[0]?.total_value?.value || 0;
+      const endTime = response.data.data[0]?.values?.[0]?.end_time;
 
-      currentStart = addDays(currentStart, daysToAdd);
+      results.push({ value, end_time: endTime });
+
+      currentDate = addDays(currentDate, 1);
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    return value;
+    return results;
   }
 
   public async getFollowersCountCurrent() {

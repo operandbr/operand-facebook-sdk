@@ -9,12 +9,10 @@ import {
 import {
   addDays,
   endOfDay,
-  getDate,
-  getMonth,
-  getYear,
   isSameDay,
   startOfDay,
   subDays,
+  format,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { PageComments } from "../comments/page-comments";
@@ -49,9 +47,11 @@ export class PageInsights extends PageComments {
   }
 
   private generateSinceAndUntil(startDate: Date, endDate: Date) {
+    const nextDay = addDays(endDate, 1);
+
     return {
-      since: `${getYear(startDate)}-${getMonth(startDate) + 1}-${getDate(startDate)}`,
-      until: `${getYear(endDate)}-${getMonth(endDate) + 1}-${getDate(endDate) + 1}`,
+      since: format(startDate, "yyyy-MM-dd"),
+      until: format(nextDay, "yyyy-MM-dd"),
     };
   }
 
