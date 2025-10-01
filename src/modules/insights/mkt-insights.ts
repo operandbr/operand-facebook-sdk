@@ -1,7 +1,8 @@
 import { Meta } from "../meta";
 import { AdMetricsResponse } from "../../interfaces/meta-response";
-import { differenceInDays, endOfDay, startOfDay } from "date-fns";
+import { differenceInDays } from "date-fns";
 import { ConstructorMkt } from "../../interfaces/meta-mkt";
+import { formatInTimeZone } from "date-fns-tz";
 
 export class MktInsights extends Meta {
   protected readonly adAAccountId: string;
@@ -11,15 +12,22 @@ export class MktInsights extends Meta {
     this.adAAccountId = constructorMkt.adAAccountId;
   }
 
+  private generateSinceAndUntil(startDate: Date, endDate: Date) {
+    return {
+      time_range: {
+        since: formatInTimeZone(startDate, "UTC", "yyyy-MM-dd"),
+        until: formatInTimeZone(endDate, "UTC", "yyyy-MM-dd"),
+      },
+    };
+  }
+
   public async getDayPaidReaches(startDate: Date, endDate: Date) {
     const response = (
       await this.api.get<AdMetricsResponse>(`/${this.adAAccountId}/insights`, {
         params: {
           fields: "reach",
           access_token: this.pageAccessToken,
-          time_increment: "1",
-          since: Math.floor(startOfDay(startDate).getTime() / 1000),
-          until: Math.floor(endOfDay(endDate).getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
         },
       })
     ).data.data;

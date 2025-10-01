@@ -6,15 +6,8 @@ import {
   PostComment,
   GetPostCommentsResponse,
 } from "../../interfaces/meta-response";
-import {
-  addDays,
-  endOfDay,
-  isSameDay,
-  startOfDay,
-  subDays,
-  format,
-} from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import { addDays, endOfDay, isSameDay, startOfDay, subDays } from "date-fns";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { PageComments } from "../comments/page-comments";
 
 export class PageInsights extends PageComments {
@@ -50,8 +43,8 @@ export class PageInsights extends PageComments {
     const nextDay = addDays(endDate, 1);
 
     return {
-      since: format(startDate, "yyyy-MM-dd"),
-      until: format(nextDay, "yyyy-MM-dd"),
+      since: formatInTimeZone(startDate, "UTC", "yyyy-MM-dd"),
+      until: formatInTimeZone(nextDay, "UTC", "yyyy-MM-dd"),
     };
   }
 

@@ -4,8 +4,9 @@ import {
   GetInsightsPageFollowersAndUnFollowersResponse,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
-import { addDays, differenceInDays, endOfDay, format, subDays } from "date-fns";
+import { addDays, differenceInDays, endOfDay, subDays } from "date-fns";
 import { IngComments } from "../comments/ing-comments";
+import { formatInTimeZone } from "date-fns-tz";
 
 export class IngInsights extends IngComments {
   constructor(constructorIng: ConstructorIng) {
@@ -19,8 +20,8 @@ export class IngInsights extends IngComments {
     const nextDay = addDays(endDate, 1);
 
     return {
-      since: format(startDate, "yyyy-MM-dd"),
-      until: format(nextDay, "yyyy-MM-dd"),
+      since: formatInTimeZone(startDate, "UTC", "yyyy-MM-dd"),
+      until: formatInTimeZone(nextDay, "UTC", "yyyy-MM-dd"),
     };
   }
 

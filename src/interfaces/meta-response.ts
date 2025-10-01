@@ -125,6 +125,12 @@ export interface FacebookPage {
   business?: {
     id: string;
     name: string;
+    owned_ad_accounts?: {
+      id: string;
+      account_id: string;
+      name: string;
+      account_status?: number;
+    };
   };
 }
 
