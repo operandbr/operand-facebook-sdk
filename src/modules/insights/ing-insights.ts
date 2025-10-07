@@ -88,7 +88,7 @@ export class IngInsights extends IngComments {
       },
     );
 
-    return response.data.data[0].values.map((value, index) => ({
+    return response.data.data?.[0]?.values?.map((value, index) => ({
       [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
         value.value,
     }));
@@ -96,7 +96,7 @@ export class IngInsights extends IngComments {
 
   public async getDayUnFollowersByTheLast30Days() {
     const endDate = endOfDay(subDays(new Date(), 1));
-    const startDate = subDays(endDate, 29);
+    const startDate = subDays(endDate, 25);
 
     const response =
       await this.api.get<GetInsightsPageFollowersAndUnFollowersResponse>(
@@ -112,7 +112,7 @@ export class IngInsights extends IngComments {
         },
       );
 
-    return response.data.data[0].values.map((value, index) => ({
+    return response.data.data?.[0]?.values?.map((value, index) => ({
       [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
         value.value,
     }));
