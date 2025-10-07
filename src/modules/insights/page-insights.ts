@@ -9,6 +9,7 @@ import {
 import { addDays, endOfDay, isSameDay, startOfDay, subDays } from "date-fns";
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { PageComments } from "../comments/page-comments";
+import { AxiosError } from "axios";
 
 export class PageInsights extends PageComments {
   constructor(constructorPage: ConstructorPage) {
@@ -28,6 +29,15 @@ export class PageInsights extends PageComments {
     return arrayPromisesSplited;
   }
 
+  private generateSinceAndUntil(startDate: Date, endDate: Date) {
+    const nextDay = addDays(endDate, 1);
+
+    return {
+      since: formatInTimeZone(startDate, "UTC", "yyyy-MM-dd"),
+      until: formatInTimeZone(nextDay, "UTC", "yyyy-MM-dd"),
+    };
+  }
+
   public async getFollowersCountCurrent() {
     return (
       await this.api.get<GetFollowersCountResponseCurrent>(`/${this.pageId}`, {
@@ -37,15 +47,6 @@ export class PageInsights extends PageComments {
         },
       })
     ).data.followers_count;
-  }
-
-  private generateSinceAndUntil(startDate: Date, endDate: Date) {
-    const nextDay = addDays(endDate, 1);
-
-    return {
-      since: formatInTimeZone(startDate, "UTC", "yyyy-MM-dd"),
-      until: formatInTimeZone(nextDay, "UTC", "yyyy-MM-dd"),
-    };
   }
 
   public async getDayTotalFollowersByDateInterval(
@@ -61,7 +62,10 @@ export class PageInsights extends PageComments {
           access_token: this.pageAccessToken,
         },
       })
-    ).data.data[0].values;
+    ).data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayFollowersByDateInterval(startDate: Date, endDate: Date) {
@@ -74,7 +78,10 @@ export class PageInsights extends PageComments {
           access_token: this.pageAccessToken,
         },
       })
-    ).data.data[0].values;
+    ).data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayUnFollowersByDateInterval(startDate: Date, endDate: Date) {
@@ -87,7 +94,10 @@ export class PageInsights extends PageComments {
           access_token: this.pageAccessToken,
         },
       })
-    ).data.data[0].values;
+    ).data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayAllImpressions(startDate: Date, endDate: Date) {
@@ -100,7 +110,10 @@ export class PageInsights extends PageComments {
           access_token: this.pageAccessToken,
         },
       })
-    ).data.data[0].values;
+    ).data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayAllImpressionsUnique(startDate: Date, endDate: Date) {
@@ -113,7 +126,10 @@ export class PageInsights extends PageComments {
           access_token: this.pageAccessToken,
         },
       })
-    ).data.data[0].values;
+    ).data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayPaidImpressionsUnique(startDate: Date, endDate: Date) {
@@ -126,13 +142,16 @@ export class PageInsights extends PageComments {
           access_token: this.pageAccessToken,
         },
       })
-    ).data.data[0].values;
+    ).data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayAllLikesTypesInAllPosts(startDate: Date, endDate: Date) {
     const response =
       await this.api.get<GetInsightsPageActionsPostReactionsTotalResponse>(
-        `/${this.pageId}/insights/ `,
+        `/${this.pageId}/insights/page_actions_post_reactions_total`,
         {
           params: {
             period: "day",
@@ -142,21 +161,21 @@ export class PageInsights extends PageComments {
         },
       );
 
-    return response.data.data[0].values.map(
-      (value) =>
+    return response.data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
         (value?.value.anger || 0) +
         (value?.value.haha || 0) +
         (value?.value.like || 0) +
         (value?.value.love || 0) +
         (value?.value.sorry || 0) +
         (value?.value.wow || 0),
-    );
+    }));
   }
 
   public async getTotalAllLikesTypesInAllPosts(startDate: Date, endDate: Date) {
     const values = await this.getDayAllLikesTypesInAllPosts(startDate, endDate);
 
-    return values.reduce((acc, value) => acc + value, 0);
+    return values.reduce((acc, value) => acc + Object.values(value)[0], 0);
   }
 
   public async getDayAllCommentsInAllPosts(startDate: Date, endDate: Date) {

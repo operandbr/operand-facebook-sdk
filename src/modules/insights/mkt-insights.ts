@@ -1,6 +1,6 @@
 import { Meta } from "../meta";
-import { AdMetricsResponse } from "../../interfaces/meta-response";
-import { differenceInDays } from "date-fns";
+import { AdMetrics, AdMetricsResponse } from "../../interfaces/meta-response";
+import { addDays, differenceInDays } from "date-fns";
 import { ConstructorMkt } from "../../interfaces/meta-mkt";
 import { formatInTimeZone } from "date-fns-tz";
 
@@ -21,27 +21,48 @@ export class MktInsights extends Meta {
     };
   }
 
-  public async getDayPaidReaches(startDate: Date, endDate: Date) {
-    const response = (
-      await this.api.get<AdMetricsResponse>(`/${this.adAAccountId}/insights`, {
-        params: {
-          fields: "reach",
-          access_token: this.pageAccessToken,
-          ...this.generateSinceAndUntil(startDate, endDate),
+  public async getDayPaidReaches(
+    startDate: Date,
+    endDate: Date,
+    platform: string,
+  ) {
+    const reachArray: AdMetrics[] = [];
+    let afterCursor: string | undefined = undefined;
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+      const response = await this.api.get<AdMetricsResponse>(
+        `/${this.adAAccountId}/insights`,
+        {
+          params: {
+            ...this.generateSinceAndUntil(startDate, endDate),
+            time_increment: 1,
+            fields: "reach",
+            breakdowns: "publisher_platform",
+            access_token: this.pageAccessToken,
+            filtering: [
+              {
+                field: "publisher_platform",
+                operator: "IN",
+                value: [platform],
+              },
+            ],
+            after: afterCursor,
+          },
         },
-      })
-    ).data.data;
+      );
 
-    const result: { value: number }[] = [];
+      const { data, paging } = response.data;
 
-    const days = differenceInDays(endDate, startDate);
+      reachArray.push(...data);
 
-    for (let i = 0; i <= days; i++) {
-      result.push({
-        value: response[i]?.reach ?? 0,
-      });
+      afterCursor = paging?.cursors?.after;
+      hasNextPage = Boolean(afterCursor);
     }
 
-    return result;
+    return reachArray.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        Number(value.reach || 0),
+    }));
   }
 }

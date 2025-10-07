@@ -264,16 +264,21 @@ export interface GetPostCommentsResponse {
 }
 
 export interface AdMetrics {
-  ad_id: string;
-  ad_name: string;
-  clicks: number;
-  inline_link_clicks: number;
-  impressions: number;
-  reach: number;
+  reach: string;
+  date_start: string;
+  date_stop: string;
+  publisher_platform: string;
 }
 
 export interface AdMetricsResponse {
   data: AdMetrics[];
+  paging?: {
+    cursors: {
+      before: string;
+      after: string;
+    };
+    next: string;
+  };
 }
 
 export interface GetStoriesPageResponse {

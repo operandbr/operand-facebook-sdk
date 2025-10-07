@@ -4,7 +4,7 @@ import {
   GetInsightsPageFollowersAndUnFollowersResponse,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
-import { addDays, differenceInDays, endOfDay, subDays } from "date-fns";
+import { addDays, endOfDay, subDays } from "date-fns";
 import { IngComments } from "../comments/ing-comments";
 import { formatInTimeZone } from "date-fns-tz";
 
@@ -88,21 +88,10 @@ export class IngInsights extends IngComments {
       },
     );
 
-    const difference = differenceInDays(endDate, startDate);
-
-    const values = response.data.data[0]?.values || [];
-
-    const result: { value: number; end_time?: string }[] = [];
-
-    for (let i = 0; i < difference; i++) {
-      const date = addDays(startDate, i);
-
-      const value = values[i]?.value || 0;
-
-      result.push({ value, end_time: date.toISOString() });
-    }
-
-    return result;
+    return response.data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayUnFollowersByTheLast30Days() {
@@ -123,21 +112,10 @@ export class IngInsights extends IngComments {
         },
       );
 
-    const difference = differenceInDays(endDate, startDate);
-
-    const values = response.data.data[0]?.values || [];
-
-    const result: { value: number; end_time?: string }[] = [];
-
-    for (let i = 0; i < difference; i++) {
-      const date = addDays(startDate, i);
-
-      const value = values[i]?.value.unfollows || 0;
-
-      result.push({ value: value, end_time: date.toISOString() });
-    }
-
-    return result;
+    return response.data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayAllViews(day: Date) {
@@ -161,18 +139,22 @@ export class IngInsights extends IngComments {
   }
 
   public async getDayAllReaches(startDate: Date, endDate: Date) {
-    const response = (
-      await this.api.get<GetInsightsResponse>(`/${this.ingId}/insights`, {
+    const response = await this.api.get<GetInsightsResponse>(
+      `/${this.ingId}/insights`,
+      {
         params: {
           metric: "reach",
           period: "day",
           ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
-      })
-    ).data.data[0].values;
+      },
+    );
 
-    return response;
+    return response.data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 
   public async getDayAllLikesInAllPosts(startDate: Date, endDate: Date) {
