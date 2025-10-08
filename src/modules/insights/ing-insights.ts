@@ -73,8 +73,6 @@ export class IngInsights extends IngComments {
   }
 
   public async getDayFollowersByDateInterval(startDate: Date, endDate: Date) {
-    console.log(this.generateSinceAndUntil(startDate, endDate));
-
     const response = await this.api.get<GetInsightsResponse>(
       `/${this.ingId}/insights`,
       {
