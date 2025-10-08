@@ -4,7 +4,7 @@ import {
   GetInsightsPageFollowersAndUnFollowersResponse,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
-import { addDays, endOfDay, subDays } from "date-fns";
+import { addDays } from "date-fns";
 import { IngComments } from "../comments/ing-comments";
 import { formatInTimeZone } from "date-fns-tz";
 
@@ -72,9 +72,8 @@ export class IngInsights extends IngComments {
     ).data.followers_count;
   }
 
-  public async getDayFollowersByTheLast30Days() {
-    const endDate = endOfDay(subDays(new Date(), 1));
-    const startDate = subDays(endDate, 29);
+  public async getDayFollowersByDateInterval(startDate: Date, endDate: Date) {
+    console.log(this.generateSinceAndUntil(startDate, endDate));
 
     const response = await this.api.get<GetInsightsResponse>(
       `/${this.ingId}/insights`,
@@ -94,10 +93,7 @@ export class IngInsights extends IngComments {
     }));
   }
 
-  public async getDayUnFollowersByTheLast30Days() {
-    const endDate = endOfDay(subDays(new Date(), 1));
-    const startDate = subDays(endDate, 25);
-
+  public async getDayUnFollowersByDateInterval(startDate: Date, endDate: Date) {
     const response =
       await this.api.get<GetInsightsPageFollowersAndUnFollowersResponse>(
         `/${this.ingId}/insights`,
