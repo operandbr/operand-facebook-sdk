@@ -9,7 +9,6 @@ import {
 import { addDays, endOfDay, isSameDay, startOfDay, subDays } from "date-fns";
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { PageComments } from "../comments/page-comments";
-import { AxiosError } from "axios";
 
 export class PageInsights extends PageComments {
   constructor(constructorPage: ConstructorPage) {
@@ -251,16 +250,12 @@ export class PageInsights extends PageComments {
   }
 
   public async getDayEngagementInAllPosts(startDate: Date, endDate: Date) {
-    startDate = subDays(toZonedTime(startDate, "UTC"), 1);
-    endDate = toZonedTime(endDate, "UTC");
-
     return (
       await this.api.get<GetInsightsResponse>(`/${this.pageId}/insights`, {
         params: {
           metric: "page_post_engagements",
           period: "day",
-          since: Math.floor(startDate.getTime() / 1000),
-          until: Math.floor(endDate.getTime() / 1000),
+          ...this.generateSinceAndUntil(startDate, endDate),
           access_token: this.pageAccessToken,
         },
       })

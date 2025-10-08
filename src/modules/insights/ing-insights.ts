@@ -1,12 +1,14 @@
 import { ConstructorIng } from "../../interfaces/ing-publish";
 import {
   GetFollowersCountResponseCurrent,
+  GetInsightsAccountsEngagedResponse,
   GetInsightsPageFollowersAndUnFollowersResponse,
   GetInsightsResponse,
 } from "../../interfaces/meta-response";
-import { addDays } from "date-fns";
+import { addDays, differenceInDays } from "date-fns";
 import { IngComments } from "../comments/ing-comments";
 import { formatInTimeZone } from "date-fns-tz";
+import Axios from "axios";
 
 export class IngInsights extends IngComments {
   constructor(constructorIng: ConstructorIng) {
@@ -211,5 +213,44 @@ export class IngInsights extends IngComments {
     const shares = await this.getTotalSharesInAllPosts(startDate, endDate);
 
     return likes + comments + shares;
+  }
+
+  public async getDayEngagementInAllPosts(startDate: Date, endDate: Date) {
+    const days = differenceInDays(endDate, startDate);
+    const engagementArray: { [a: string]: number }[] = [];
+    let next: string | undefined = undefined;
+
+    for (let index = 0; index <= days; index++) {
+      const response = next
+        ? await Axios.get<GetInsightsAccountsEngagedResponse>(next)
+        : await this.api.get<GetInsightsAccountsEngagedResponse>(
+            `/${this.ingId}/insights`,
+            {
+              params: {
+                metric: "accounts_engaged",
+                metric_type: "total_value",
+                period: "day",
+                since: formatInTimeZone(startDate, "UTC", "yyyy-MM-dd"),
+                until: formatInTimeZone(
+                  addDays(startDate, 1),
+                  "UTC",
+                  "yyyy-MM-dd",
+                ),
+                access_token: this.pageAccessToken,
+              },
+            },
+          );
+
+      const { data, paging } = response.data;
+
+      engagementArray.push({
+        [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+          Number(data?.[0]?.total_value?.value || 0),
+      });
+
+      next = paging?.next;
+    }
+
+    return engagementArray;
   }
 }

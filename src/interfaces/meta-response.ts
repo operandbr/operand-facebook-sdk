@@ -147,12 +147,7 @@ export interface FacebookAdAccount {
     account_id: string;
     id: string;
   }>;
-  paging: {
-    cursors: {
-      before: string;
-      after: string;
-    };
-  };
+  paging: PaginationInfo;
 }
 
 export interface GetPageAccountsResponse {
@@ -272,13 +267,7 @@ export interface AdMetrics {
 
 export interface AdMetricsResponse {
   data: AdMetrics[];
-  paging?: {
-    cursors: {
-      before: string;
-      after: string;
-    };
-    next: string;
-  };
+  paging?: PaginationInfo;
 }
 
 export interface GetStoriesPageResponse {
@@ -317,4 +306,14 @@ export interface BusinessDiscovery {
 export interface GetInstagramDiscoveryResponse {
   business_discovery: BusinessDiscovery;
   id: string;
+}
+
+export interface GetInsightsAccountsEngagedResponse {
+  data: Insights<{
+    value: null;
+  }>[];
+  paging: {
+    previous: string;
+    next: string;
+  };
 }
