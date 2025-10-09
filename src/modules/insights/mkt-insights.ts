@@ -1,6 +1,6 @@
 import { Meta } from "../meta";
 import { AdMetrics, AdMetricsResponse } from "../../interfaces/meta-response";
-import { addDays, differenceInDays } from "date-fns";
+import { addDays } from "date-fns";
 import { ConstructorMkt } from "../../interfaces/meta-mkt";
 import { formatInTimeZone } from "date-fns-tz";
 

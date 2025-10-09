@@ -259,6 +259,9 @@ export class PageInsights extends PageComments {
           access_token: this.pageAccessToken,
         },
       })
-    ).data.data[0].values;
+    ).data.data[0].values.map((value, index) => ({
+      [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+        value.value,
+    }));
   }
 }
