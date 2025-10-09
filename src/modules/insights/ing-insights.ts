@@ -114,24 +114,43 @@ export class IngInsights extends IngComments {
     }));
   }
 
-  public async getDayAllViews(day: Date) {
-    const since = day;
-    const until = addDays(since, 1);
+  public async getDayAllViews(startDate: Date, endDate: Date) {
+    const days = differenceInDays(endDate, startDate);
+    const viewsArray: { [a: string]: number }[] = [];
+    let next: string | undefined = undefined;
 
-    const response = await this.api.get<GetInsightsResponse>(
-      `/${this.ingId}/insights`,
-      {
-        params: {
-          metric: "views",
-          period: "day",
-          metric_type: "total_value",
-          ...this.generateSinceAndUntil(since, until),
-          access_token: this.pageAccessToken,
-        },
-      },
-    );
+    for (let index = 0; index <= days; index++) {
+      const response = next
+        ? await Axios.get<GetInsightsAccountsEngagedResponse>(next)
+        : await this.api.get<GetInsightsAccountsEngagedResponse>(
+            `/${this.ingId}/insights`,
+            {
+              params: {
+                metric: "views",
+                metric_type: "total_value",
+                period: "day",
+                since: formatInTimeZone(startDate, "UTC", "yyyy-MM-dd"),
+                until: formatInTimeZone(
+                  addDays(startDate, 1),
+                  "UTC",
+                  "yyyy-MM-dd",
+                ),
+                access_token: this.pageAccessToken,
+              },
+            },
+          );
 
-    return response.data.data[0].total_value.value || 0;
+      const { data, paging } = response.data;
+
+      viewsArray.push({
+        [formatInTimeZone(addDays(startDate, index), "UTC", "yyyy-MM-dd")]:
+          Number(data?.[0]?.total_value?.value || 0),
+      });
+
+      next = paging?.next;
+    }
+
+    return viewsArray;
   }
 
   public async getDayAllReaches(startDate: Date, endDate: Date) {
