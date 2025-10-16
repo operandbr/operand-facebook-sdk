@@ -313,7 +313,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
             ...(thumbOffset ? { thumb_offset: thumbOffset } : {}),
             ...(userTags ? { user_tags: JSON.stringify(userTags) } : {}),
             ...(collaborators
-              ? { collaborators: JSON.stringify(userTags) }
+              ? { collaborators: JSON.stringify(collaborators) }
               : {}),
           },
         },
