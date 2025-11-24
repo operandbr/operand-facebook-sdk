@@ -282,6 +282,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     if (!(await this.verifyPhotoSize(Buffer.from(arrayBuffer), true))) {
       throw new OperandError({
         message: "The photo must be less or equal to 4MB.",
+        code: 37,
       });
     }
 
@@ -313,6 +314,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     if (!(await this.verifyPhotoSize(path, false))) {
       throw new OperandError({
         message: "The photo must be less or equal to 4MB.",
+        code: 37,
       });
     }
 
