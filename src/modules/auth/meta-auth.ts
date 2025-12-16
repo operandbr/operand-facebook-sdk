@@ -216,7 +216,7 @@ export class MetaAuth {
     const api = generateAxiosInstance({ apiVersion, isInstagramApi: true });
 
     return (
-      await api.get<GetAlongTokenMetaResponse>("/access_token", {
+      await api.get<GetAlongTokenMetaResponse>("/refresh_access_token", {
         params: {
           access_token: accessToken,
           grant_type: "ig_refresh_token",
