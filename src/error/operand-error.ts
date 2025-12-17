@@ -8,7 +8,7 @@ export class OperandError {
   parseMetaError(...data: any) {
     const { error, message } = data[0];
 
-    console.log({ error });
+    console.log({ error: error?.response?.data || error });
 
     if (error instanceof AxiosError) {
       const data = error.response?.data as MetaError;
