@@ -590,7 +590,7 @@ export class PagePublish extends MetaUtils implements IPagePublish {
       // );
 
       const formData = new FormData();
-      formData.append("description", message);
+      formData.append("description", message || "");
       formData.append(
         video.source === "url" ? "file_url" : "source",
         video.source === "url" ? video.value : fs.createReadStream(video.value),
