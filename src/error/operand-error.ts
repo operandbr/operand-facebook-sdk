@@ -112,7 +112,8 @@ export class OperandError {
 
         // Publication Errors - Instagram
         case 9007:
-          this.message_private = "The image aspect ratio is too narrow";
+          this.message_private =
+            "The media is not ready for publishing, please wait for a moment";
           this.code_private = data.error.code;
           break;
         case 9008:

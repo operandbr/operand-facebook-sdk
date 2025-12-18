@@ -217,7 +217,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     }
 
     const status = await fs.promises.stat(value as string);
-    return status.size / 1024 / 1024 <= 4;
+    return status.size / 1024 / 1024 <= 8;
   }
 
   private verifyStatusCodeContainerVideoDownload = async (id: string) => {
@@ -247,6 +247,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
 
       if (status === "FINISHED") {
         statusCodeContainer = 0;
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        break;
       }
     }
   };

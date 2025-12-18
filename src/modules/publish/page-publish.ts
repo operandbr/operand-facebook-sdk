@@ -241,11 +241,11 @@ export class PagePublish extends MetaUtils implements IPagePublish {
     isBuffer: boolean,
   ): Promise<boolean> {
     if (isBuffer) {
-      return (value as Buffer).length / 1024 / 1024 <= 4;
+      return (value as Buffer).length / 1024 / 1024 <= 8;
     }
 
     const status = await fs.promises.stat(value as string);
-    return status.size / 1024 / 1024 <= 4;
+    return status.size / 1024 / 1024 <= 8;
   }
 
   private validatePublishDate(datePublish: Date): boolean {
