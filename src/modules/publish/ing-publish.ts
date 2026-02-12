@@ -334,6 +334,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     isCarouselItem,
     coverUrl,
     thumbOffset,
+    collaborators,
+    userTags,
   }: saveMediaInMetaIngContainer): Promise<string> => {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
@@ -368,11 +370,14 @@ export class IngPublish extends MetaUtils implements IIngPublish {
             video_url: url,
             access_token: this.pageAccessToken,
             ...(isCarouselItem ? { is_carousel_item: true } : {}),
-            ...(["REELS", "FEED"].includes(to) ? { media_type: "REELS" } : {}),
-            ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
+            ...(to === "STORIES" ? { media_type: "STORIES" } : { media_type: "REELS" }),
             ...(caption ? { caption } : {}),
             ...(coverUrl ? { cover_url: coverUrl } : {}),
             ...(thumbOffset ? { thumb_offset: thumbOffset } : {}),
+            ...(userTags ? { user_tags: JSON.stringify(userTags) } : {}),
+            ...(collaborators
+              ? { collaborators: JSON.stringify(collaborators) }
+              : {}),
           },
         },
       )
@@ -390,6 +395,8 @@ export class IngPublish extends MetaUtils implements IIngPublish {
     isCarouselItem,
     coverUrl,
     thumbOffset,
+    collaborators,
+    userTags,
   }: saveMediaInMetaIngContainer): Promise<string> => {
     const arrayBuffer = await fs.promises.readFile(path);
 
@@ -422,13 +429,16 @@ export class IngPublish extends MetaUtils implements IIngPublish {
       {
         params: {
           ...(isCarouselItem ? { is_carousel_item: true } : {}),
-          ...(["REELS", "FEED"].includes(to) ? { media_type: "REELS" } : {}),
-          ...(to === "STORIES" ? { media_type: "STORIES" } : {}),
+          ...(to === "STORIES" ? { media_type: "STORIES" } : { media_type: "REELS" }),
           upload_type: "resumable",
           access_token: this.pageAccessToken,
           ...(caption ? { caption } : {}),
           ...(coverUrl ? { cover_url: coverUrl } : {}),
           ...(thumbOffset ? { thumb_offset: thumbOffset } : {}),
+          ...(userTags ? { user_tags: JSON.stringify(userTags) } : {}),
+          ...(collaborators
+            ? { collaborators: JSON.stringify(collaborators) }
+            : {}),
         },
       },
     );
@@ -519,11 +529,13 @@ export class IngPublish extends MetaUtils implements IIngPublish {
         userTags,
       } = post;
 
+      const mediaType = coverUrl ? "REELS" : "FEED";
+
       const containerId =
         medias[0].mediaType === "photo"
           ? await this.savePhotoInMetaContainerByUrl({
               value: medias[0].value,
-              to: "FEED",
+              to: mediaType,
               caption,
               coverUrl,
               thumbOffset,
@@ -532,7 +544,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
             })
           : medias[0].source === "url"
             ? await this.saveVideoInMetaContainerByUrl({
-                to: "FEED",
+                to: mediaType,
                 value: medias[0].value,
                 caption,
                 coverUrl,
@@ -541,7 +553,7 @@ export class IngPublish extends MetaUtils implements IIngPublish {
                 userTags,
               })
             : await this.saveVideoInMetaContainerByPath({
-                to: "FEED",
+                to: mediaType,
                 value: medias[0].value,
                 caption,
                 coverUrl,

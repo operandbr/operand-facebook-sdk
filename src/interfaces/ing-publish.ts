@@ -21,8 +21,8 @@ export type Medias = PhotoMediaItem | VideoMediaItem;
 
 export interface UserTag {
   username: string;
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
 }
 
 export type CreatePost = {
