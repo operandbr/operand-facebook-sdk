@@ -1,5 +1,5 @@
 {
-  "name": "operand-facebook-sdk",
+  "name": "operand-meta-sdk",
   "version": "1.2.01",
   "main": "dist/src/index.js",
   "scripts": {
