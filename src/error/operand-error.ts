@@ -4,6 +4,7 @@ import { AxiosError } from "axios";
 export class OperandError {
   private message_private: string;
   private code_private: number;
+  private raw_error_private: MetaError['error'] | null = null;
 
   parseMetaError(...data: any) {
     const { error, message } = data[0];
@@ -18,6 +19,8 @@ export class OperandError {
         this.code_private = 500;
         return;
       }
+
+      this.raw_error_private = data.error;
 
       switch (data.error.code) {
         // Authentication Errors
@@ -190,6 +193,7 @@ export class OperandError {
     } else if (error instanceof OperandError) {
       this.message_private = error.message;
       this.code_private = error.code;
+      this.raw_error_private = error.rawError;
     } else {
       this.message_private = message || "Unknown error occurred";
       this.code_private = 500;
@@ -205,6 +209,10 @@ export class OperandError {
         code: this.code,
       }),
     );
+  }
+
+  get rawError() {
+    return this.raw_error_private;
   }
 
   get message() {

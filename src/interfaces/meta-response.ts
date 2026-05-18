@@ -286,7 +286,10 @@ export interface MetaError {
     message: string;
     type: string;
     code: number;
+    error_subcode?: number;
     fbtrace_id: string;
+    error_user_title?: string;
+    error_user_msg?: string;
   };
 }
 
